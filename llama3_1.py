@@ -5,21 +5,41 @@ import math
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 @dataclass
 class ModelArgs:
     vocab_size: int = -1
     padding_idx: int = -1
+
     dim: int = 12
     num_layers: int = 1
+
     num_heads: int = 6
     num_kv_heads: Optional[int] = None
+
+    multiple_of: int = 256
+    ffn_dim_multiplier: Optional[float] = None
+
     rms_norm_eps: float = 1e-5
 
     rope_theta: float = 500000
     use_scaled_rope: bool = False
 
+    max_batch_size: int = 32
+    max_seq_len: int = 2048
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+
+        if self.n_kv_heads is None:
+            self.n_kv_heads = self.n_heads
+        assert self.n_kv_heads <= self.n_heads
+        assert self.n_heads % self.n_kv_heads == 0
+        assert self.dim % self.n_heads == 0
 
 
 class RMSNorm(torch.nn.Module):
@@ -84,6 +104,24 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
     return x[:, :, :, None, :].expand(bs, slen, n_kv_heads, n_rep, head_dim).reshape(bs, slen, n_kv_heads * n_rep, head_dim)
 
 
+class MLP(nn.Module):
+    def __init__(self, args: ModelArgs, hidden_idm: int):
+        super().__init__()
+        self.multiple_of = args.multiple_of
+        hidden_dim = int(2 * hidden_dim / 3)
+        # custom dim factor multiplier
+        if args.ffn_dim_multiplier is not None:
+            hidden_dim = int(args.ffn_dim_multiplier * hidden_dim)
+        hidden_dim = self.multiple_of * ((hidden_dim + self.multiple_of - 1) // self.multiple_of)
+
+        self.w1 = nn.Linear(args.dim, hidden_dim, bias=False)
+        self.w3 = nn.Linear(args.dim, hidden_dim, bias=False)
+        self.w2 = nn.Linear(hidden_dim, args.dim, bias=False)
+
+    def forward(self, x):
+        return self.w2(F.silu(self.w1(x)) * self.w3(x))
+        
+
 class TransformerBlock(nn.Module):
     def __init__(self, layer_id: int, args: ModelArgs):
         super().__init__()
@@ -93,7 +131,7 @@ class TransformerBlock(nn.Module):
         self.attention = Attention(args) # TODO
 
         self.mlp_norm = RMSNorm(args.dim, args.rms_norm_eps)
-        self.mlp = MLP(args.dim, hidden_dim=4 * args.dim) # TODO
+        self.mlp = MLP(args, 4 * args.dim)
 
     def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
         h = x + self.attention(self.attention_norm(x), start_pos, freqs_cis, mask)
@@ -116,7 +154,7 @@ class Llama3_1Transformer(nn.Module):
             self.layers.append(TransformerBlock(layer_id, args))
 
         self.norm = RMSNorm(args.dim, args.rms_norm_eps)
-        self.lm_head = nn.Linear(in_features=args.dim, out_features=args.vocab_size, bias=False)
+        self.lm_head = nn.Linear(args.dim, args.vocab_size, bias=False)
 
     @torch.inference_mode()
     def forward(self, tokens: torch.Tensor, start_pos: int, targets) -> torch.Tensor:
