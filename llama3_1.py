@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from kan import KANLinear
+
 
 @dataclass
 class ModelArgs:
@@ -19,6 +21,7 @@ class ModelArgs:
     n_heads: int = 6
     n_kv_heads: Optional[int] = None
 
+    use_kan: bool = True
     multiple_of: int = 256
     ffn_dim_multiplier: Optional[float] = None
 
@@ -173,6 +176,17 @@ class MLP(nn.Module):
 
     def forward(self, x):
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
+    
+
+class KAN(nn.Module):
+    def __init__(self, args: ModelArgs, hidden_dim: int):
+        super().__init__()
+        self.w1 = KANLinear(args.dim, hidden_dim)
+        self.w3 = KANLinear(args.dim, hidden_dim)
+        self.w2 = KANLinear(hidden_dim, args.dim)
+
+    def forward(self, x):
+        return self.w2(self.w1(x) * self.w3(x))
         
 
 class TransformerBlock(nn.Module):
@@ -184,11 +198,15 @@ class TransformerBlock(nn.Module):
         self.attention = Attention(args)
 
         self.mlp_norm = RMSNorm(args.dim, args.rms_norm_eps)
-        self.mlp = MLP(args, 4 * args.dim)
+
+        if args.use_kan:
+            self.mlp = KAN(args, 4 * args.dim)
+        else:
+            self.mlp = MLP(args, 4 * args.dim)
 
     def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
         h = x + self.attention(self.attention_norm(x), start_pos, freqs_cis, mask)
-        out = h + self.feed_forward(self.ffn_norm(h))
+        out = h + self.mlp(self.mlp_norm(h))
         return out
 
 
@@ -210,7 +228,7 @@ class Llama3_1Transformer(nn.Module):
         self.lm_head = nn.Linear(args.dim, args.vocab_size, bias=False)
 
     @torch.inference_mode()
-    def forward(self, tokens: torch.Tensor, start_pos: int, targets) -> torch.Tensor:
+    def forward(self, tokens: torch.Tensor, start_pos: int = 0, targets: Optional[int] = None) -> torch.Tensor:
         B, L = tokens.shape
         embedds = self.embeddings(tokens)
 
@@ -239,3 +257,7 @@ class Llama3_1Transformer(nn.Module):
 
 model = Llama3_1Transformer(ModelArgs)
 print(model)
+
+input = torch.tensor([[0, 1, 4, 12, 9]])
+out = model(input)
+print(out)
