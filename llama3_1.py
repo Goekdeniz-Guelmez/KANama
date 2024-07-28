@@ -10,14 +10,14 @@ import torch.nn.functional as F
 
 @dataclass
 class ModelArgs:
-    vocab_size: int = -1
-    padding_idx: int = -1
+    vocab_size: int = 20
+    padding_idx: int = 1
 
     dim: int = 12
-    num_layers: int = 1
+    n_layers: int = 1
 
-    num_heads: int = 6
-    num_kv_heads: Optional[int] = None
+    n_heads: int = 6
+    n_kv_heads: Optional[int] = None
 
     multiple_of: int = 256
     ffn_dim_multiplier: Optional[float] = None
@@ -104,8 +104,61 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
     return x[:, :, :, None, :].expand(bs, slen, n_kv_heads, n_rep, head_dim).reshape(bs, slen, n_kv_heads * n_rep, head_dim)
 
 
+class Attention(nn.Module):
+    def __init__(self, args: ModelArgs):
+        super().__init__()
+        self.n_kv_heads = args.n_heads if args.n_kv_heads is None else args.n_kv_heads
+        self.n_heads = args.n_heads
+
+        self.n_rep = self.n_heads // self.n_kv_heads
+        self.head_dim = args.dim // self.n_heads
+
+        self.q_proj = nn.Linear(args.dim, args.n_heads * self.head_dim, bias=False)
+        self.k_proj = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
+        self.v_proj = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
+
+        self.cache_k = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
+        self.cache_v = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
+
+        self.out_proj = nn.Linear(args.n_heads * self.head_dim, args.dim, bias=False)
+
+    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
+        bsz, seqlen, _ = x.shape
+        xq, xk, xv = self.q_proj(x), self.k_proj(x), self.v_proj(x)
+
+        xq = xq.view(bsz, seqlen, self.n_heads, self.head_dim)
+        xk = xk.view(bsz, seqlen, self.n_kv_heads, self.head_dim)
+        xv = xv.view(bsz, seqlen, self.n_kv_heads, self.head_dim)
+
+        xq, xk = apply_rotary_emb(xq, xk, freqs_cis=freqs_cis)
+
+        self.cache_k = self.cache_k.to(xq)
+        self.cache_v = self.cache_v.to(xq)
+
+        self.cache_k[:bsz, start_pos : start_pos + seqlen] = xk
+        self.cache_v[:bsz, start_pos : start_pos + seqlen] = xv
+
+        keys = self.cache_k[:bsz, : start_pos + seqlen]
+        values = self.cache_v[:bsz, : start_pos + seqlen]
+
+        # repeat k/v heads if n_kv_heads < n_heads
+        keys = repeat_kv(keys, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
+        values = repeat_kv(values, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
+
+        xq = xq.transpose(1, 2)  # (bs, n_local_heads, seqlen, head_dim)
+        keys = keys.transpose(1, 2)  # (bs, n_local_heads, cache_len + seqlen, head_dim)
+        values = values.transpose(1, 2)  # (bs, n_local_heads, cache_len + seqlen, head_dim)
+        scores = torch.matmul(xq, keys.transpose(2, 3)) / math.sqrt(self.head_dim)
+        if mask is not None:
+            scores = scores + mask  # (bs, n_local_heads, seqlen, cache_len + seqlen)
+        scores = F.softmax(scores.float(), dim=-1).type_as(xq)
+        output = torch.matmul(scores, values)  # (bs, n_local_heads, seqlen, head_dim)
+        output = output.transpose(1, 2).contiguous().view(bsz, seqlen, -1)
+        return self.out_proj(output)
+
+
 class MLP(nn.Module):
-    def __init__(self, args: ModelArgs, hidden_idm: int):
+    def __init__(self, args: ModelArgs, hidden_dim: int):
         super().__init__()
         self.multiple_of = args.multiple_of
         hidden_dim = int(2 * hidden_dim / 3)
@@ -128,7 +181,7 @@ class TransformerBlock(nn.Module):
         self.layer_id = layer_id
 
         self.attention_norm = RMSNorm(args.dim, args.rms_norm_eps)
-        self.attention = Attention(args) # TODO
+        self.attention = Attention(args)
 
         self.mlp_norm = RMSNorm(args.dim, args.rms_norm_eps)
         self.mlp = MLP(args, 4 * args.dim)
@@ -182,3 +235,7 @@ class Llama3_1Transformer(nn.Module):
             loss = None
 
         return logits, loss
+
+
+model = Llama3_1Transformer(ModelArgs)
+print(model)
