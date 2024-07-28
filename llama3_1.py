@@ -68,34 +68,47 @@ def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0, use_scaled:
     return freqs_cis
 
 
+class TransformerBlock(nn.Module):
+    def __init__(self, layer_id: int, args: ModelArgs):
+        super().__init__()
+        self.layer_id = layer_id
+
+        self.attention_norm = RMSNorm(args.dim, args.rms_norm_eps)
+        self.attention = Attention(args) # TODO
+
+        self.mlp_norm = RMSNorm(args.dim, args.rms_norm_eps)
+        self.mlp = MLP(args.dim, hidden_dim=4 * args.dim) # TODO
+
+    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
+        h = x + self.attention(self.attention_norm(x), start_pos, freqs_cis, mask)
+        out = h + self.feed_forward(self.ffn_norm(h))
+        return out
+
+
+
 class Llama3_1Transformer(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args
 
-        self.freqs_cis = precompute_freqs_cis(
-            args.dim // args.n_heads,
-            args.max_seq_len * 2,
-            args.rope_theta,
-            args.use_scaled_rope
-        )
+        self.freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len * 2, args.rope_theta, args.use_scaled_rope)
 
         self.embeddings = nn.Embedding(args.vocab_size, args.dim, padding_idx=args.padding_idx)
 
         self.layers = torch.nn.ModuleList()
         for layer_id in range(args.n_layers):
-            self.layers.append(TransformerBlock(layer_id, args)) # TODO
+            self.layers.append(TransformerBlock(layer_id, args))
 
         self.norm = RMSNorm(args.dim, args.rms_norm_eps)
         self.lm_head = nn.Linear(in_features=args.dim, out_features=args.vocab_size, bias=False)
 
     @torch.inference_mode()
-    def forward(self, tokens: torch.Tensor, start_pos: int) -> torch.Tensor:
+    def forward(self, tokens: torch.Tensor, start_pos: int, targets) -> torch.Tensor:
         B, L = tokens.shape
         embedds = self.embeddings(tokens)
 
         self.freqs_cis = self.freqs_cis.to(embedds.device)
-        freqs_cis = # TODO
+        freqs_cis = self.freqs_cis[start_pos : start_pos + L]
 
         mask = None
         if L > 1:
@@ -107,4 +120,11 @@ class Llama3_1Transformer(nn.Module):
             h = layer(embedds, start_pos, freqs_cis, mask)
 
         h = self.norm(h)
-        return self.lm_head(h).float()
+
+        logits = self.lm_head(h).float()
+
+        loss = None
+        if targets is not None:
+            loss = None
+
+        return logits, loss
