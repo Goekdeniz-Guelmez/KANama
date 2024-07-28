@@ -1,0 +1,5 @@
+#!/Users/gokdenizgulmez/Desktop/KANama/.conda/bin/python3.12
+import sys
+from lib2to3.main import main
+
+sys.exit(main("lib2to3.fixes"))
