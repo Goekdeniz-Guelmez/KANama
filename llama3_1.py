@@ -138,6 +138,11 @@ class Attention(nn.Module):
         self.cache_k = self.cache_k.to(xq)
         self.cache_v = self.cache_v.to(xq)
 
+        if self.training:
+            # Detach cache before updating during training
+            self.cache_k = self.cache_k.detach()
+            self.cache_v = self.cache_v.detach()
+
         self.cache_k[:bsz, start_pos : start_pos + seqlen] = xk
         self.cache_v[:bsz, start_pos : start_pos + seqlen] = xv
 
@@ -181,49 +186,12 @@ class MLP(nn.Module):
 class KAN(nn.Module):
     def __init__(self, args: ModelArgs, hidden_dim: int):
         super().__init__()
-        self.multiple_of = args.multiple_of
-        hidden_dim = int(2 * hidden_dim / 3)
-        # custom dim factor multiplier
-        if args.ffn_dim_multiplier is not None:
-            hidden_dim = int(args.ffn_dim_multiplier * hidden_dim)
-        hidden_dim = self.multiple_of * ((hidden_dim + self.multiple_of - 1) // self.multiple_of)
-
-        self.w1 = KANLinear(
-            args.dim, hidden_dim,
-            grid_size=args.grid_size,
-            spline_order=args.spline_order,
-            scale_noise=args.scale_noise,
-            scale_base=args.scale_base,
-            scale_spline=args.scale_spline,
-            base_activation=nn.SiLU,
-            grid_eps=args.grid_eps,
-            grid_range=args.grid_range
-        )
-        self.w3 = KANLinear(
-            args.dim, hidden_dim,
-            grid_size=args.grid_size,
-            spline_order=args.spline_order,
-            scale_noise=args.scale_noise,
-            scale_base=args.scale_base,
-            scale_spline=args.scale_spline,
-            base_activation=nn.SiLU,
-            grid_eps=args.grid_eps,
-            grid_range=args.grid_range
-        )
-        self.w2 = KANLinear(
-            hidden_dim, args.dim,
-            grid_size=args.grid_size,
-            spline_order=args.spline_order,
-            scale_noise=args.scale_noise,
-            scale_base=args.scale_base,
-            scale_spline=args.scale_spline,
-            base_activation=nn.Identity,  # No activation on the final layer
-            grid_eps=args.grid_eps,
-            grid_range=args.grid_range
-        )
+        self.w1 = KANLinear(args.dim, hidden_dim)
+        self.w3 = KANLinear(args.dim, hidden_dim)
+        self.w2 = KANLinear(hidden_dim, args.dim, base_activation=nn.Identity)
 
     def forward(self, x):
-        return self.w2(F.silu(self.w1(x)) * self.w3(x))
+        return self.w2(self.w1(x) * self.w3(x))
         
 
 class TransformerBlock(nn.Module):
@@ -264,7 +232,6 @@ class Llama3_1Transformer(nn.Module):
         self.norm = RMSNorm(args.dim, args.rms_norm_eps)
         self.lm_head = nn.Linear(args.dim, args.vocab_size, bias=False)
 
-    @torch.inference_mode()
     def forward(self, tokens: torch.Tensor, start_pos: int = 0, targets: Optional[int] = None) -> torch.Tensor:
         B, L = tokens.shape
         embedds = self.embeddings(tokens)
@@ -287,14 +254,41 @@ class Llama3_1Transformer(nn.Module):
 
         loss = None
         if targets is not None:
-            loss = None
+            # Shift so that tokens < n predict n
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_targets = targets[..., 1:].contiguous()
+            # Flatten the tokens
+            loss_fct = nn.CrossEntropyLoss()
+            shift_logits = shift_logits.view(-1, self.args.vocab_size)
+            shift_targets = shift_targets.view(-1)
+            # Enable model parallelism
+            shift_targets = shift_targets.to(shift_logits.device)
+            loss = loss_fct(shift_logits, shift_targets)
 
         return logits, loss
 
+# Define a simple dataset and dataloader
+input_data = torch.tensor([[0, 1, 4, 12, 9]], dtype=torch.long)
+target_data = torch.tensor([[1, 4, 12, 9, 0]], dtype=torch.long)
+dataset = torch.utils.data.TensorDataset(input_data, target_data)
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
-model = Llama3_1Transformer(ModelArgs)
-print(model)
-
-input = torch.tensor([[0, 1, 4, 12, 9]])
-out = model(input)
+# Define the model, loss function, and optimizer
+model = Llama3_1Transformer(ModelArgs())
+out = model(input_data)
 print(out)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+# Training loop
+num_epochs = 10
+
+for epoch in range(num_epochs):
+    for batch in dataloader:
+        inputs, targets = batch
+        optimizer.zero_grad()
+        outputs, loss = model(inputs, targets=targets)
+        
+        loss.backward()
+        optimizer.step()
+        
+    print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}')
