@@ -3,8 +3,6 @@ import torch
 from kan import KANLinear
 
 def train_old(model, dataloader, optimizer, num_epochs=100):
-    # Training loop
-
     for epoch in range(num_epochs):
         for batch in dataloader:
             inputs, targets = batch
@@ -48,32 +46,37 @@ def estimate_loss(model, eval_steps, train_data, val_data):
     model.train()
     return out
 
-def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=2, eval_interval=10, eval_steps=10, lr=0.002, save=False):
+def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=10, eval_interval=10, eval_steps=10, save=False):
     steps = []
     train_losses = []
     val_losses = []
 
-    for epoch in range(max_steps - 1):
+    for step in range(max_steps - 1):
     # every once in a while evaluate the loss on train and val sets
-        if epoch % eval_interval == 0 or epoch == max_steps - 1:
+        if step % eval_interval == 0 or step == max_steps - 1:
             losses = estimate_loss(model=model, eval_steps=eval_steps, train_data=train_data, val_data=val_data)
-            steps.append(epoch)
+            steps.append(step)
             train_losses.append(losses['train'])
             val_losses.append(losses['val'])
-            print(f"step {epoch}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+            print(f"step {step}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
         # sample a batch of data
-        xb, yb = get_batch(split='train', train_data=train_data, val_data=val_data)
+        xb, yb = get_batch(split='train', train_data=train_data, val_data=val_data, model=model)
 
         # evaluate the loss
         logits, loss = model(xb, start_pos=0, targets=yb)
 
-        if epoch % loss_intervall == 0 or epoch == max_steps - 1:
-            print(f"step {epoch}: train loss {loss.item():.4f}")
+        if step % loss_intervall == 0 or step == max_steps - 1:
+            print(f"step {step}: train loss {loss.item():.4f}")
 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
+
+        for layer in model.layers:
+            if isinstance(layer.mlp, KANLinear):
+                with torch.no_grad():
+                    layer.mlp.update_grid(xb)
 
     if save:
         # Save the trained model
