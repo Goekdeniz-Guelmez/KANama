@@ -12,8 +12,8 @@ from kan import KANLinear
 
 @dataclass
 class ModelArgs:
-    vocab_size: int = 20
-    padding_idx: int = 1
+    vocab_size: int = -1
+    padding_idx: int = -1
 
     dim: int = 12
     n_layers: int = 1
@@ -216,7 +216,7 @@ class TransformerBlock(nn.Module):
 
 
 
-class Llama3_1Transformer(nn.Module):
+class Llama3_2Transformer(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args
@@ -266,38 +266,3 @@ class Llama3_1Transformer(nn.Module):
             loss = loss_fct(shift_logits, shift_targets)
 
         return logits, loss
-
-# Define a simple dataset and dataloader
-input_data = torch.tensor([[0, 1, 4, 12, 9]], dtype=torch.long)
-target_data = torch.tensor([[1, 4, 12, 9, 0]], dtype=torch.long)
-dataset = torch.utils.data.TensorDataset(input_data, target_data)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
-
-# Define the model, loss function, and optimizer
-model = Llama3_1Transformer(ModelArgs())
-print(model)
-out = model(input_data)
-print(out)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-# Training loop
-num_epochs = 100
-
-for epoch in range(num_epochs):
-    for batch in dataloader:
-        inputs, targets = batch
-        optimizer.zero_grad()
-        outputs, loss = model(inputs, targets=targets)
-        
-        loss.backward()
-        optimizer.step()
-
-        # Update grid points at the end of each epoch
-        for layer in model.layers:
-            if isinstance(layer.mlp, KANLinear):
-                with torch.no_grad():
-                    for batch in dataloader:
-                        inputs, _ = batch
-                        layer.mlp.update_grid(inputs)
-        
-    print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}')
