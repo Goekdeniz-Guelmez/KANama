@@ -1,3 +1,5 @@
+# Copied from https://github.com/Blealtan/efficient-kan/blob/7b6ce1c87f18c8bc90c208f6b494042344216b11/tests/test_simple_math.py
+
 import torch
 import torch.nn.functional as F
 import math

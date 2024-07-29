@@ -13,12 +13,13 @@ from kan import KANLinear
 @dataclass
 class ModelArgs:
     vocab_size: int = -1
-    padding_idx: int = -1
+    pad_id: int = -1
+    eos_id: int = pad_id
 
-    dim: int = 12
-    n_layers: int = 1
+    dim: int = 32
+    n_layers: int = 8
 
-    n_heads: int = 6
+    n_heads: int = 8
     n_kv_heads: Optional[int] = None
 
     use_kan: bool = True
@@ -223,7 +224,7 @@ class Llama3_2Transformer(nn.Module):
 
         self.freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len * 2, args.rope_theta, args.use_scaled_rope)
 
-        self.embeddings = nn.Embedding(args.vocab_size, args.dim, padding_idx=args.padding_idx)
+        self.embeddings = nn.Embedding(args.vocab_size, args.dim, padding_idx=args.pad_id)
 
         self.layers = torch.nn.ModuleList()
         for layer_id in range(args.n_layers):

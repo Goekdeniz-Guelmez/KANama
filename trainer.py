@@ -51,6 +51,8 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
     train_losses = []
     val_losses = []
 
+    print(f"Training for {max_steps} steps")
+
     for step in range(max_steps - 1):
     # every once in a while evaluate the loss on train and val sets
         if step % eval_interval == 0 or step == max_steps - 1:
@@ -81,3 +83,5 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
     if save:
         # Save the trained model
         torch.save(model.state_dict(), "trained_KANama_model.pth")
+
+    return model
