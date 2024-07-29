@@ -183,12 +183,12 @@ class MLP(nn.Module):
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
     
 
-class KAN(nn.Module):
+class KANMLP(nn.Module):
     def __init__(self, args: ModelArgs, hidden_dim: int):
         super().__init__()
         self.w1 = KANLinear(args.dim, hidden_dim)
         self.w3 = KANLinear(args.dim, hidden_dim)
-        self.w2 = KANLinear(hidden_dim, args.dim, base_activation=nn.Identity)
+        self.w2 = KANLinear(hidden_dim, args.dim, base_activation=nn.Identity, enable_standalone_scale_spline=True)
 
     def forward(self, x):
         return self.w2(self.w1(x) * self.w3(x))
@@ -205,7 +205,7 @@ class TransformerBlock(nn.Module):
         self.mlp_norm = RMSNorm(args.dim, args.rms_norm_eps)
 
         if args.use_kan:
-            self.mlp = KAN(args, 4 * args.dim)
+            self.mlp = KANMLP(args, 4 * args.dim)
         else:
             self.mlp = MLP(args, 4 * args.dim)
 
@@ -275,6 +275,7 @@ dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
 # Define the model, loss function, and optimizer
 model = Llama3_1Transformer(ModelArgs())
+print(model)
 out = model(input_data)
 print(out)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -290,5 +291,13 @@ for epoch in range(num_epochs):
         
         loss.backward()
         optimizer.step()
+
+        # Update grid points at the end of each epoch
+        for layer in model.layers:
+            if isinstance(layer.mlp, KANLinear):
+                with torch.no_grad():
+                    for batch in dataloader:
+                        inputs, _ = batch
+                        layer.mlp.update_grid(inputs)
         
     print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}')
