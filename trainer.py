@@ -47,6 +47,7 @@ def estimate_loss(model, eval_steps, train_data, val_data):
     return out
 
 def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=10, eval_interval=10, eval_steps=10, save=False):
+    torch.autograd.set_detect_anomaly(True)
     steps = []
     train_losses = []
     val_losses = []
@@ -60,7 +61,7 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
             steps.append(step)
             train_losses.append(losses['train'])
             val_losses.append(losses['val'])
-            print(f"step {step}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+            print(f"step {step}, train loss: {losses['train']:.4f}, val loss: {losses['val']:.4f}")
 
         # sample a batch of data
         xb, yb = get_batch(split='train', train_data=train_data, val_data=val_data, model=model)
@@ -69,10 +70,11 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
         logits, loss = model(xb, start_pos=0, targets=yb)
 
         if step % loss_intervall == 0 or step == max_steps - 1:
-            print(f"step {step}: train loss {loss.item():.4f}")
+            print(f"step {step}, train loss: {loss.item():.4f}")
 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
 
         for layer in model.layers:
@@ -82,6 +84,6 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
 
     if save:
         # Save the trained model
-        torch.save(model.state_dict(), "trained_KANama_model.pth")
+        torch.save(model.state_dict(), "trained_KANamav3_model.pth")
 
     return model

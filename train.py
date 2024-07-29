@@ -4,7 +4,7 @@ from tokenizers import Tokenizer
 
 from trainer import train
 from inference import generate
-from KANamav2 import Llama3_2Transformer, ModelArgs
+from KANamav3 import KANamev3, ModelArgs
 
 
 print("... Loading Tokenizer")
@@ -16,7 +16,7 @@ ModelArgs.max_batch_size = 4
 ModelArgs.max_seq_len = 64
 
 print("... Loading Model")
-model = Llama3_2Transformer(ModelArgs)
+model = KANamev3(ModelArgs)
 print(model)
 
 
