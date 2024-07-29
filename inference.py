@@ -1,7 +1,6 @@
 from typing import List
 
 import torch
-import torch.nn.functional as F
 
 
 @torch.inference_mode()

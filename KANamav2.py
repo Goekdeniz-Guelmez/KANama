@@ -217,7 +217,7 @@ class TransformerBlock(nn.Module):
 
 
 
-class Llama3_2Transformer(nn.Module):
+class KANamev2(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args

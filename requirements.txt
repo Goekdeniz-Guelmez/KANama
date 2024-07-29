@@ -3,3 +3,4 @@ torch
 dataclasses
 typing
 sentencepiece
+matplotlib
