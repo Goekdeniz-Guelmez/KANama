@@ -9,6 +9,11 @@ import torch.nn.functional as F
 
 from kan import KANLinear
 
+from transformers import LlamaTokenizer  # Assuming LLaMA tokenizer is similar
+
+# Initialize tokenizer
+tokenizer = LlamaTokenizer.from_pretrained('meta-llama/Meta-Llama-3.1-8B-Instruct')
+
 
 @dataclass
 class ModelArgs:
@@ -267,9 +272,15 @@ class Llama3_1Transformer(nn.Module):
 
         return logits, loss
 
-# Define a simple dataset and dataloader
-input_data = torch.tensor([[0, 1, 4, 12, 9]], dtype=torch.long)
-target_data = torch.tensor([[1, 4, 12, 9, 0]], dtype=torch.long)
+# Tokenize the text
+text = "Hello World!"
+tokens = tokenizer.encode(text, add_special_tokens=True)
+
+# Prepare input and target tensors
+input_data = torch.tensor([tokens[:-1]], dtype=torch.long)  # Input tokens (excluding the last token)
+target_data = torch.tensor([tokens[1:]], dtype=torch.long)  # Target tokens (excluding the first token)
+
+# Define the dataset and dataloader
 dataset = torch.utils.data.TensorDataset(input_data, target_data)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
