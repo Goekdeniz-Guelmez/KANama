@@ -3,7 +3,7 @@ import torch
 from tokenizers import Tokenizer
 
 from trainer import train
-from llama3_2 import Llama3_2Transformer, ModelArgs
+from KANamav2 import Llama3_2Transformer, ModelArgs
 
 
 print("... Loading Tokenizer")
