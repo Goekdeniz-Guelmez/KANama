@@ -181,12 +181,49 @@ class MLP(nn.Module):
 class KAN(nn.Module):
     def __init__(self, args: ModelArgs, hidden_dim: int):
         super().__init__()
-        self.w1 = KANLinear(args.dim, hidden_dim)
-        self.w3 = KANLinear(args.dim, hidden_dim)
-        self.w2 = KANLinear(hidden_dim, args.dim)
+        self.multiple_of = args.multiple_of
+        hidden_dim = int(2 * hidden_dim / 3)
+        # custom dim factor multiplier
+        if args.ffn_dim_multiplier is not None:
+            hidden_dim = int(args.ffn_dim_multiplier * hidden_dim)
+        hidden_dim = self.multiple_of * ((hidden_dim + self.multiple_of - 1) // self.multiple_of)
+
+        self.w1 = KANLinear(
+            args.dim, hidden_dim,
+            grid_size=args.grid_size,
+            spline_order=args.spline_order,
+            scale_noise=args.scale_noise,
+            scale_base=args.scale_base,
+            scale_spline=args.scale_spline,
+            base_activation=nn.SiLU,
+            grid_eps=args.grid_eps,
+            grid_range=args.grid_range
+        )
+        self.w3 = KANLinear(
+            args.dim, hidden_dim,
+            grid_size=args.grid_size,
+            spline_order=args.spline_order,
+            scale_noise=args.scale_noise,
+            scale_base=args.scale_base,
+            scale_spline=args.scale_spline,
+            base_activation=nn.SiLU,
+            grid_eps=args.grid_eps,
+            grid_range=args.grid_range
+        )
+        self.w2 = KANLinear(
+            hidden_dim, args.dim,
+            grid_size=args.grid_size,
+            spline_order=args.spline_order,
+            scale_noise=args.scale_noise,
+            scale_base=args.scale_base,
+            scale_spline=args.scale_spline,
+            base_activation=nn.Identity,  # No activation on the final layer
+            grid_eps=args.grid_eps,
+            grid_range=args.grid_range
+        )
 
     def forward(self, x):
-        return self.w2(self.w1(x) * self.w3(x))
+        return self.w2(F.silu(self.w1(x)) * self.w3(x))
         
 
 class TransformerBlock(nn.Module):
