@@ -166,7 +166,8 @@ class Attention(nn.Module):
             scores = scores + mask  # (bs, n_local_heads, seqlen, cache_len + seqlen)
 
         # Apply softmax temperature projection
-        self.current_softmax_temp = self.softmax_temp_act(self.softmax_temp_proj(x)).mean().item()
+        self.current_softmax_temp = self.softmax_temp_act(self.softmax_temp_proj(x))
+        self.current_softmax_temp = torch.clamp(self.current_softmax_temp, min=0.1, max=10.0).mean().item() + 1e-6 # clamp the temperature and ensure temp is positive
 
         scores = F.softmax(scores.float() * self.current_softmax_temp, dim=-1).type_as(queries)
         output = torch.matmul(scores, values)  # (bs, n_local_heads, seqlen, head_dim)
@@ -225,7 +226,7 @@ class TransformerBlock(nn.Module):
 
 
 
-class KANamev3(nn.Module):
+class KANamav3(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args

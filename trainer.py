@@ -46,7 +46,7 @@ def estimate_loss(model, eval_steps, train_data, val_data):
     model.train()
     return out
 
-def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=10, eval_interval=10, eval_steps=10, save=False):
+def train(model, optimizer, train_data, val_data, max_steps=100, loss_interval=10, eval_interval=10, eval_steps=10, save=False):
     torch.autograd.set_detect_anomaly(True)
     steps = []
     train_losses = []
@@ -55,7 +55,7 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
     print(f"Training for {max_steps} steps")
 
     for step in range(max_steps - 1):
-    # every once in a while evaluate the loss on train and val sets
+        # Every once in a while, evaluate the loss on train and val sets
         if step % eval_interval == 0 or step == max_steps - 1:
             losses = estimate_loss(model=model, eval_steps=eval_steps, train_data=train_data, val_data=val_data)
             steps.append(step)
@@ -63,13 +63,17 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
             val_losses.append(losses['val'])
             print(f"step {step}, train loss: {losses['train']:.4f}, val loss: {losses['val']:.4f}")
 
-        # sample a batch of data
+            # Print temperature values for each layer
+            for layer_id, layer in enumerate(model.layers):
+                print(f"Layer {layer_id} temperature: {layer.attention.current_softmax_temp}")
+
+        # Sample a batch of data
         xb, yb = get_batch(split='train', train_data=train_data, val_data=val_data, model=model)
 
-        # evaluate the loss
+        # Evaluate the loss
         logits, loss = model(xb, start_pos=0, targets=yb)
 
-        if step % loss_intervall == 0 or step == max_steps - 1:
+        if step % loss_interval == 0 or step == max_steps - 1:
             print(f"step {step}, train loss: {loss.item():.4f}")
 
         optimizer.zero_grad(set_to_none=True)
@@ -84,6 +88,6 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_intervall=
 
     if save:
         # Save the trained model
-        torch.save(model.state_dict(), "trained_KANamav3_model.pth")
+        torch.save(model.state_dict(), "trained_KANamev3_model.pth")
 
     return model

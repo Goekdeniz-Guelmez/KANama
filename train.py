@@ -51,7 +51,7 @@ n = int(0.9 * len(data[0]))
 train_data = data[:, :n]
 val_data = data[:, n:]
 
-model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, save=True, max_steps=10000, loss_intervall=100, eval_interval=2000)
+model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, save=True, max_steps=100000, loss_interval=100, eval_interval=2000)
 
 
 

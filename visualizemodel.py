@@ -1,6 +1,6 @@
 from tokenizers import Tokenizer
 
-from KANamav2 import KANamev2, ModelArgs
+from KANamav3 import KANamav3, ModelArgs
 
 from utils import load_model, visualize_KANama, save_model_parameters_to_file
 
@@ -14,8 +14,8 @@ ModelArgs.max_batch_size = 4
 ModelArgs.max_seq_len = 64
 
 
-model = KANamev2(ModelArgs)
-model = load_model(model=model)
+model = KANamav3(ModelArgs)
+model = load_model(model=model, file_name="/Users/gokdenizgulmez/Desktop/KANama/trained_KANamav3_model.pth")
 
-save_model_parameters_to_file(model, "trained_KANama_model.txt")
-visualize_KANama("trained_KANama_model.txt", "trained_KANama_model.png", "trained_KANama_model/")
+save_model_parameters_to_file(model, "trained_KANamav3_model.txt")
+visualize_KANama("trained_KANamav3_model.txt", "trained_KANamav3_model.png", "trained_KANamav3_model/")
