@@ -24,6 +24,7 @@ class ModelArgs:
     n_kv_heads: Optional[int] = None
 
     use_kan: bool = True
+    train_softmax_temp: bool = True
     multiple_of: int = 256
     ffn_dim_multiplier: Optional[float] = None
 
