@@ -16,8 +16,12 @@ else:
 
 # Import the version from the package
 version = {}
-with open(root_dir / "model/version.py") as f:
-    exec(f.read(), version)
+version_file = root_dir / "KANama/model/version.py"
+if version_file.exists():
+    with open(version_file) as f:
+        exec(f.read(), version)
+else:
+    raise FileNotFoundError(f"\n\n\n\nVersion file {version_file} not found\n\n\n\n")
 
 # Setup configuration
 setup(
@@ -31,6 +35,7 @@ setup(
     url="https://github.com/Goekdeniz-Guelmez/KANama",
     license="MIT",
     install_requires=requirements,
+    include_package_data=True,
     packages=find_packages(include=["KANama", "KANama.*"]),
     python_requires=">=3.10",
     classifiers=[
