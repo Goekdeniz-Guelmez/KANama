@@ -17,7 +17,7 @@ else:
 # Setup configuration
 setup(
     name="KANama",
-    version="1.9.4",
+    version="1.9.5",
     description="KANama: marrying Kolmogorov–Arnold Networks with Meta's Llama model.",
     long_description=open(root_dir / "README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
