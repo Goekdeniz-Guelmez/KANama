@@ -6,13 +6,13 @@ from setuptools import find_packages, setup
 root_dir = Path(__file__).parent
 
 
-requirements_file = root_dir / "requirements.txt"
+requirements_file = "requirements.txt"
 
 if requirements_file.exists():
     with open(requirements_file) as fid:
         requirements = [l.strip() for l in fid.readlines()]
 else:
-    print("Warning: requirements.txt not found. Proceeding without dependencies.")
+    print("\n\n\n\n\n\n\Warning: requirements.txt not found. Proceeding without dependencies.\n\n\n\n\n\n")
 
 
 # Import the version from the package
