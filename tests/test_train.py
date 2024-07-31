@@ -14,69 +14,17 @@ from model.KANamav1 import KANamav1
 ModelArgs.vocab_size = 30
 ModelArgs.pad_id = 0
 ModelArgs.max_batch_size = 4
-ModelArgs.max_seq_len = 64
+ModelArgs.max_seq_len = 20
 
 
-input_data = torch.tensor([[0, 1, 4, 12, 9]], dtype=torch.long)
+train_data = torch.tensor([[25, 1, 4, 12, 9, 7, 1, 4, 12, 9, 4, 1, 4, 22, 9, 13, 26, 24, 12, 9, 0]], dtype=torch.long)
+val_data = torch.tensor([[25, 1, 4, 12, 9, 7, 1, 4, 12, 9, 4, 1, 4, 22, 9, 13, 26, 24, 12, 9, 0]], dtype=torch.long)
 
 
-print("Creating models")
 try:
-    KANamav4 = KANamav4(ModelArgs)
-    KANamav3 = KANamav3(ModelArgs)
-    KANamav2 = KANamav2(ModelArgs)
-    KANamav1 = KANamav1(ModelArgs)
-
-    if KANamav1 != nn.Module and KANamav2 != nn.Module and KANamav3 != nn.Module and KANamav4 != nn.Module:
-        print("Succesfully created models!")
-    else:
-        print("Created models are not nn.Modules!")
+    model = KANamav4(ModelArgs)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, save=False, max_steps=10, loss_interval=2, eval_interval=5)
+    print("Succesfull!")
 except Exception as e:
-    print(f"Erro while creating model: {e}")
-
-
-
-
-
-
-
-
-
-# print("FIRST TEST")
-
-# output = generate(model=model, prompt_tokens=first_input)
-# generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-# print(generated_text)
-
-
-
-
-
-
-# optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-# with open("/Users/gokdenizgulmez/Desktop/KANama/tiny-shakespear.txt", "r") as file:
-#     dataset = file.read()
-
-# dataset = tokenizer.encode(dataset)
-# data = torch.LongTensor(dataset.ids).unsqueeze(0)
-
-# n = int(0.9 * len(data[0]))
-# train_data = data[:, :n]
-# val_data = data[:, n:]
-
-# model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, save=True, max_steps=100000, loss_interval=100, eval_interval=2000)
-
-
-
-
-
-
-
-# print("LAST TEST")
-# line_19826 = """ROMEO:\nI pay thy poverty, """
-# first_tokens = tokenizer.encode(line_19826)
-# first_input = torch.LongTensor(first_tokens.ids).unsqueeze(0)
-# output = generate(model=model, prompt_tokens=first_input)
-# generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-# print(generated_text)
+    print(f"Erro while training model: {e}")

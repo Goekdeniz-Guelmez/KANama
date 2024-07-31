@@ -22,7 +22,7 @@ try:
     KANamav2 = KANamav2(ModelArgs)
     KANamav1 = KANamav1(ModelArgs)
 
-    print("Succesfully created models!")
+    print("Succesfull!")
 
 except Exception as e:
     print(f"Error while creating model: {e}")
