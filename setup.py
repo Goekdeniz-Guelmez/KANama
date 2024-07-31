@@ -17,7 +17,7 @@ else:
 # Setup configuration
 setup(
     name="KANama",
-    version="1.9.2",
+    version="1.9.3",
     description="KANama: marrying Kolmogorov–Arnold Networks with Meta's Llama model.",
     long_description=open(root_dir / "README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -26,10 +26,13 @@ setup(
     url="https://github.com/Goekdeniz-Guelmez/KANama",
     license="MIT",
     install_requires=requirements,
-    include_package_data=True,
-    # packages=find_packages(include=["KANama", "KANama.*", "model", "train"]),
+    packages=find_packages(include=["KANama", "KANama.*"]),
     python_requires=">=3.10",
     classifiers=[
         "Programming Language :: Python :: 3.10"
-    ]
+    ],
+    include_package_data=True,  # Ensure all data files are included
+    package_data={
+        # Include any package-specific data files here
+    },
 )
