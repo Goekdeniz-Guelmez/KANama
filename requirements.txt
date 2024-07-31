@@ -4,4 +4,3 @@ dataclasses
 typing
 sentencepiece
 matplotlib
-setuptools==69.5.1

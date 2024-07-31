@@ -1,37 +1,16 @@
-import sys
-from pathlib import Path
 from setuptools import find_packages, setup
 
-# Get the project root directory
-root_dir = Path(__file__).parent
-
-
-requirements_file = "requirements.txt"
-
-if requirements_file.exists():
-    with open(requirements_file) as fid:
-        requirements = [l.strip() for l in fid.readlines()]
-else:
-    print("\n\n\n\n\n\n\Warning: requirements.txt not found. Proceeding without dependencies.\n\n\n\n\n\n")
-
-
-# Import the version from the package
-version = {}
-with open(str(root_dir / "model" / "version.py")) as f:
-    exec(f.read(), version)
-
-# Setup configuration
 setup(
     name="KANama",
-    version=version['__version__'],
+    version="1.8.3",
     description="KANama: marrying Kolmogorov–Arnold Networks with Meta's Llama model.",
-    long_description=open(root_dir / "README.md", encoding="utf-8").read(),
+    long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author_email="goekdenizguelmez@gmail.com",
     author="Gökdeniz Gülmez",
     url="https://github.com/Goekdeniz-Guelmez/KANama",
     license="MIT",
-    install_requires=requirements,
+    install_requires=["torch", "dataclasses", "typing", "sentencepiece", "matplotlib", "transformers"],
     packages=find_packages(),
     python_requires=">=3.10",
     classifiers=[
