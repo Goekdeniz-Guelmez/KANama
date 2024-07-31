@@ -16,7 +16,7 @@ else:
 
 # Import the version from the package
 version = {}
-with open(root_dir / "KANama/model/version.py") as f:
+with open(root_dir / "model/version.py") as f:
     exec(f.read(), version)
 
 # Setup configuration
