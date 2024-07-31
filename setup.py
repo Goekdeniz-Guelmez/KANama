@@ -6,13 +6,9 @@ from setuptools import find_packages, setup
 root_dir = Path(__file__).parent
 
 # Add the package directory to the Python path
-package_dir = root_dir / "model"
+package_dir = root_dir
 
-# Read the requirements from the requirements.txt file
-# First try to read from the root directory, if not found, try the package directory
 requirements_file = root_dir / "requirements.txt"
-if not requirements_file.exists():
-    requirements_file = package_dir / "requirements.txt"
 
 if requirements_file.exists():
     with open(requirements_file) as fid:
@@ -39,7 +35,7 @@ setup(
     license="MIT",
     install_requires=requirements_file,
     packages=find_packages(),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     classifiers=[
         "Programming Language :: Python :: 3.10"
     ],
