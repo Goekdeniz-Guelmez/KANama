@@ -8,24 +8,19 @@ root_dir = Path(__file__).parent
 # Add the package directory to the Python path
 package_dir = root_dir / "model"
 
-# Read the requirements from the requirements.txt file
-# First try to read from the root directory, if not found, try the package directory
+# Read the requirements from the requirements.txt file in the root directory
 requirements_file = root_dir / "requirements.txt"
-if not requirements_file.exists():
-    requirements_file = package_dir / "requirements.txt"
-
 if requirements_file.exists():
     with open(requirements_file) as fid:
         requirements = [l.strip() for l in fid.readlines()]
 else:
     print("\n\n\n\nWarning: requirements.txt not found. Proceeding without dependencies.\n\n\n\n")
-
+    requirements = []
 
 # Import the version from the package
 version = {}
 with open(str(package_dir / "version.py")) as f:
     exec(f.read(), version)
-
 
 # Setup configuration
 setup(
