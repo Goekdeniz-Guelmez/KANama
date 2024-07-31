@@ -5,8 +5,6 @@ from setuptools import find_packages, setup
 # Get the project root directory
 root_dir = Path(__file__).parent
 
-# Add the package directory to the Python path
-package_dir = root_dir
 
 requirements_file = root_dir / "requirements.txt"
 
@@ -19,7 +17,7 @@ else:
 
 # Import the version from the package
 version = {}
-with open(str(package_dir / "version.py")) as f:
+with open(str(root_dir / "model" / "version.py")) as f:
     exec(f.read(), version)
 
 # Setup configuration
@@ -38,5 +36,5 @@ setup(
     python_requires=">=3.10",
     classifiers=[
         "Programming Language :: Python :: 3.10"
-    ],
+    ]
 )
