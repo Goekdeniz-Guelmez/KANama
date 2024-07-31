@@ -14,15 +14,6 @@ else:
     print("\n\n\n\nWarning: requirements.txt not found. Proceeding without dependencies.\n\n\n\n")
     requirements = []
 
-# Import the version from the package
-version = {}
-version_file = root_dir / "KANama/model/version.py"
-if version_file.exists():
-    with open(version_file) as f:
-        exec(f.read(), version)
-else:
-    raise FileNotFoundError(f"\n\n\n\nVersion file {version_file} not found\n\n\n\n")
-
 # Setup configuration
 setup(
     name="KANama",
