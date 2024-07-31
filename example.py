@@ -1,8 +1,8 @@
 import torch
 
-from trainer.trainer import train
-from model.args import ModelArgs
-from model.KANamav4 import KANamav4
+from KANama.trainer.trainer import train
+from KANama.model.args import ModelArgs
+from KANama.model.KANamav4 import KANamav4
 
 
 ModelArgs.vocab_size = 30
