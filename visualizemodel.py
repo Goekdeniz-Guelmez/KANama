@@ -1,6 +1,6 @@
 from tokenizers import Tokenizer
 
-from KANamav3 import KANamav3, ModelArgs
+from model.KANamav3 import KANamav3, ModelArgs
 
 from utils import load_model, visualize_KANama, save_model_parameters_to_file
 

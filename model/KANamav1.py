@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from kan import KANLinear
+from model.kan import KANLinear
 
 
 @dataclass

@@ -1,6 +1,6 @@
 import torch
 
-from kan import KANLinear
+from model.kan import KANLinear
 
 def train_old(model, dataloader, optimizer, num_epochs=100):
     for epoch in range(num_epochs):

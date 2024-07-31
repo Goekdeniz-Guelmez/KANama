@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from kan import KANLinear
+from model.kan import KANLinear
 
 
 @dataclass
@@ -121,10 +121,6 @@ class Attention(nn.Module):
         self.k_proj = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
         self.v_proj = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
 
-        self.softmax_temp_proj = nn.Linear(args.dim, 1, bias=False)  # Add softmax temperature projection\
-        self.softmax_temp_act = F.silu
-        self.current_softmax_temp = None
-
         self.cache_k = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
         self.cache_v = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
 
@@ -158,18 +154,13 @@ class Attention(nn.Module):
         keys = repeat_kv(keys, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
         values = repeat_kv(values, self.n_rep)  # (bs, cache_len + seqlen, n_local_heads, head_dim)
 
-        queries = xq.transpose(1, 2)  # (bs, n_local_heads, seqlen, head_dim)
+        xq = xq.transpose(1, 2)  # (bs, n_local_heads, seqlen, head_dim)
         keys = keys.transpose(1, 2)  # (bs, n_local_heads, cache_len + seqlen, head_dim)
         values = values.transpose(1, 2)  # (bs, n_local_heads, cache_len + seqlen, head_dim)
-        scores = torch.matmul(queries, keys.transpose(2, 3)) / math.sqrt(self.head_dim)
+        scores = torch.matmul(xq, keys.transpose(2, 3)) / math.sqrt(self.head_dim)
         if mask is not None:
             scores = scores + mask  # (bs, n_local_heads, seqlen, cache_len + seqlen)
-
-        # Apply softmax temperature projection
-        self.current_softmax_temp = self.softmax_temp_act(self.softmax_temp_proj(x))
-        self.current_softmax_temp = torch.clamp(self.current_softmax_temp, min=0.1, max=10.0).mean().item() + 1e-6 # clamp the temperature and ensure temp is positive
-
-        scores = F.softmax(scores.float() * self.current_softmax_temp, dim=-1).type_as(queries)
+        scores = F.softmax(scores.float(), dim=-1).type_as(xq)
         output = torch.matmul(scores, values)  # (bs, n_local_heads, seqlen, head_dim)
         output = output.transpose(1, 2).contiguous().view(bsz, seqlen, -1)
         return self.out_proj(output)
@@ -226,7 +217,7 @@ class TransformerBlock(nn.Module):
 
 
 
-class KANamav3(nn.Module):
+class KANamav2(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args

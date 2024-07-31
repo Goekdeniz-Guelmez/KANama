@@ -4,7 +4,7 @@ from tokenizers import Tokenizer
 
 from trainer import train
 from inference import generate
-from KANamav2 import KANamev2, ModelArgs
+from model.KANamav2 import KANamev2, ModelArgs
 
 
 print("... Loading Tokenizer")
