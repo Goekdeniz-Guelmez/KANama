@@ -37,7 +37,7 @@ setup(
     author="Gökdeniz Gülmez",
     url="https://github.com/Goekdeniz-Guelmez/KANama",
     license="MIT",
-    install_requires=requirements,
+    install_requires=requirements_file,
     packages=find_packages(),
     python_requires=">=3.8",
     classifiers=[
