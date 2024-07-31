@@ -36,7 +36,7 @@ setup(
     license="MIT",
     install_requires=requirements,
     include_package_data=True,
-    packages=find_packages(include=["KANama", "KANama.*"]),
+    # packages=find_packages(include=["KANama", "KANama.*", "model", "train"]),
     python_requires=">=3.10",
     classifiers=[
         "Programming Language :: Python :: 3.10"
