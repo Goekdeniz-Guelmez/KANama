@@ -31,10 +31,10 @@ setup(
     author="Gökdeniz Gülmez",
     url="https://github.com/Goekdeniz-Guelmez/KANama",
     license="MIT",
-    install_requires=requirements_file,
+    install_requires=requirements,
     packages=find_packages(),
     python_requires=">=3.10",
     classifiers=[
         "Programming Language :: Python :: 3.10"
-    ]
+    ],
 )
