@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.kan import KANLinear
-from model.args import ModelArgs
-from model.utils import RMSNorm, precompute_freqs_cis, apply_rotary_emb, repeat_kv
+from kan import KANLinear
+from args import ModelArgs
+from utils import RMSNorm, precompute_freqs_cis, apply_rotary_emb, repeat_kv
 
 
 class Attention(nn.Module):
