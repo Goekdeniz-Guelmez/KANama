@@ -2,7 +2,7 @@ import torch
 
 from tokenizers import Tokenizer
 
-from trainer import train
+from trainer.trainer import train
 from inference import generate
 from model.KANamav2 import KANamev2, ModelArgs
 
