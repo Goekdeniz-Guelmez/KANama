@@ -1,7 +1,4 @@
 import torch
-import torch.nn as nn
-
-from tokenizers import Tokenizer
 
 from trainer.trainer import train
 from model.args import ModelArgs
@@ -22,9 +19,13 @@ val_data = torch.tensor([[25, 1, 4, 12, 9, 7, 1, 4, 12, 9, 4, 1, 4, 22, 9, 13, 2
 
 
 try:
-    model = KANamav4(ModelArgs)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, save=False, max_steps=10, loss_interval=2, eval_interval=5)
+    KANamav4 = KANamav4(ModelArgs)
+    optimizer = torch.optim.Adam(KANamav4.parameters(), lr=0.001)
+    KANamav4_new = train(model=KANamav4, optimizer=optimizer, train_data=train_data, val_data=val_data, save=False, max_steps=10, loss_interval=2, eval_interval=5)
+
+    KANamav2 = KANamav2(ModelArgs)
+    optimizer = torch.optim.Adam(KANamav2.parameters(), lr=0.001)
+    KANamav2_new = train(model=KANamav2, optimizer=optimizer, train_data=train_data, val_data=val_data, save=False, max_steps=10, loss_interval=2, eval_interval=5)
     print("Succesfull!")
 except Exception as e:
     print(f"Erro while training model: {e}")

@@ -46,11 +46,17 @@ def estimate_loss(model, eval_steps, train_data, val_data):
     model.train()
     return out
 
-def train(model, optimizer, train_data, val_data, max_steps=100, loss_interval=10, eval_interval=10, eval_steps=10, save=False):
+def train(model, optimizer, train_data, val_data, max_steps=100, loss_interval=10, eval_interval=10, eval_steps=10, save=False, print_softmax_temp: bool = True):
     torch.autograd.set_detect_anomaly(True)
     steps = []
     train_losses = []
     val_losses = []
+    temperature_exists = False
+
+    if print_softmax_temp:
+        # Check if the first layer has the current_softmax_temp attribute
+        temperature_exists = hasattr(model.layers[0].attention, 'current_softmax_temp') if model.layers else False
+
 
     print(f"Training for {max_steps} steps")
 
@@ -63,9 +69,10 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_interval=1
             val_losses.append(losses['val'])
             print(f"step {step}, train loss: {losses['train']:.4f}, val loss: {losses['val']:.4f}")
 
-            # Print temperature values for each layer
-            for layer_id, layer in enumerate(model.layers):
-                print(f"Layer {layer_id} temperature: {layer.attention.current_softmax_temp}")
+            if temperature_exists:
+                # Print temperature values for each layer if the attribute exists
+                for layer_id, layer in enumerate(model.layers):
+                    print(f"Layer {layer_id} temperature: {layer.attention.current_softmax_temp}")
 
         # Sample a batch of data
         xb, yb = get_batch(split='train', train_data=train_data, val_data=val_data, model=model)
