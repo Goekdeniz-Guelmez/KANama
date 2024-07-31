@@ -129,7 +129,7 @@ class TransformerBlock(nn.Module):
 
 
 
-class KANamav3(nn.Module):
+class KANamav4(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args

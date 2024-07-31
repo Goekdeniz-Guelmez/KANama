@@ -120,14 +120,14 @@ class TransformerBlock(nn.Module):
 
 
 
-class Llama3_1Transformer(nn.Module):
+class KANamav1(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.args = args
 
         self.freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len * 2, args.rope_theta, args.use_scaled_rope)
 
-        self.embeddings = nn.Embedding(args.vocab_size, args.dim, padding_idx=args.padding_idx)
+        self.embeddings = nn.Embedding(args.vocab_size, args.dim, padding_idx=args.pad_id)
 
         self.layers = torch.nn.ModuleList()
         for layer_id in range(args.n_layers):
@@ -171,37 +171,37 @@ class Llama3_1Transformer(nn.Module):
 
         return logits, loss
 
-# Define a simple dataset and dataloader
-input_data = torch.tensor([[0, 1, 4, 12, 9]], dtype=torch.long)
-target_data = torch.tensor([[1, 4, 12, 9, 0]], dtype=torch.long)
-dataset = torch.utils.data.TensorDataset(input_data, target_data)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
+# # Define a simple dataset and dataloader
+# input_data = torch.tensor([[0, 1, 4, 12, 9]], dtype=torch.long)
+# target_data = torch.tensor([[1, 4, 12, 9, 0]], dtype=torch.long)
+# dataset = torch.utils.data.TensorDataset(input_data, target_data)
+# dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
 
-# Define the model, loss function, and optimizer
-model = Llama3_1Transformer(ModelArgs())
-print(model)
-out = model(input_data)
-print(out)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+# # Define the model, loss function, and optimizer
+# model = Llama3_1Transformer(ModelArgs())
+# print(model)
+# out = model(input_data)
+# print(out)
+# optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-# Training loop
-num_epochs = 100
+# # Training loop
+# num_epochs = 100
 
-for epoch in range(num_epochs):
-    for batch in dataloader:
-        inputs, targets = batch
-        optimizer.zero_grad()
-        outputs, loss = model(inputs, targets=targets)
+# for epoch in range(num_epochs):
+#     for batch in dataloader:
+#         inputs, targets = batch
+#         optimizer.zero_grad()
+#         outputs, loss = model(inputs, targets=targets)
         
-        loss.backward()
-        optimizer.step()
+#         loss.backward()
+#         optimizer.step()
 
-        # Update grid points at the end of each epoch
-        for layer in model.layers:
-            if isinstance(layer.mlp, KANLinear):
-                with torch.no_grad():
-                    for batch in dataloader:
-                        inputs, _ = batch
-                        layer.mlp.update_grid(inputs)
+#         # Update grid points at the end of each epoch
+#         for layer in model.layers:
+#             if isinstance(layer.mlp, KANLinear):
+#                 with torch.no_grad():
+#                     for batch in dataloader:
+#                         inputs, _ = batch
+#                         layer.mlp.update_grid(inputs)
         
-    print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}')
+#     print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}')

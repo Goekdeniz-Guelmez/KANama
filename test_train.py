@@ -1,13 +1,15 @@
 import torch
+import torch.nn as nn
 
 from tokenizers import Tokenizer
 
 from trainer.trainer import train
 from inference import generate
-from model import KANamav4, KANamav3, KANamav2, KANamav1, ModelArgs
-from model import KANamav4, KANamav3, KANamav2, KANamav1, ModelArgs
-from model import KANamav4, KANamav3, KANamav2, KANamav1, ModelArgs
-from model import KANamav4, KANamav3, KANamav2, KANamav1, ModelArgs
+from model.args import ModelArgs
+from model.KANamav4 import KANamav4
+from model.KANamav3 import KANamav3
+from model.KANamav2 import KANamav2
+from model.KANamav1 import KANamav1
 
 
 ModelArgs.vocab_size = 30
@@ -16,7 +18,7 @@ ModelArgs.max_batch_size = 4
 ModelArgs.max_seq_len = 64
 
 
-first_input = torch.Tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]])
+input_data = torch.tensor([[0, 1, 4, 12, 9]], dtype=torch.long)
 
 
 print("Creating models")
@@ -25,6 +27,11 @@ try:
     KANamav3 = KANamav3(ModelArgs)
     KANamav2 = KANamav2(ModelArgs)
     KANamav1 = KANamav1(ModelArgs)
+
+    if KANamav1 != nn.Module and KANamav2 != nn.Module and KANamav3 != nn.Module and KANamav4 != nn.Module:
+        print("Succesfully created models!")
+    else:
+        print("Created models are not nn.Modules!")
 except Exception as e:
     print(f"Erro while creating model: {e}")
 
