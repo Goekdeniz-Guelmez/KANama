@@ -4,7 +4,6 @@ import torch.nn as nn
 from tokenizers import Tokenizer
 
 from trainer.trainer import train
-from inference import generate
 from model.args import ModelArgs
 from model.KANamav4 import KANamav4
 from model.KANamav3 import KANamav3
