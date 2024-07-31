@@ -5,9 +5,6 @@ from setuptools import find_packages, setup
 # Get the project root directory
 root_dir = Path(__file__).parent
 
-# Add the package directory to the Python path
-package_dir = root_dir / "model"
-
 # Read the requirements from the requirements.txt file in the root directory
 requirements_file = root_dir / "requirements.txt"
 if requirements_file.exists():
@@ -19,7 +16,7 @@ else:
 
 # Import the version from the package
 version = {}
-with open(str(package_dir / "version.py")) as f:
+with open(root_dir / "KANama/model/version.py") as f:
     exec(f.read(), version)
 
 # Setup configuration
@@ -34,7 +31,7 @@ setup(
     url="https://github.com/Goekdeniz-Guelmez/KANama",
     license="MIT",
     install_requires=requirements,
-    packages=find_packages(),
+    packages=find_packages(include=["KANama", "KANama.*"]),
     python_requires=">=3.10",
     classifiers=[
         "Programming Language :: Python :: 3.10"
