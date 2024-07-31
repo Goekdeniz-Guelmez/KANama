@@ -26,11 +26,12 @@ version = {}
 with open(str(package_dir / "version.py")) as f:
     exec(f.read(), version)
 
+
 # Setup configuration
 setup(
-    name="mlx-kan",
+    name="KANama",
     version=version['__version__'],
-    description="KANama: marrying Kolmogorov–Arnold Networks with Meta's Llama model."
+    description="KANama: marrying Kolmogorov–Arnold Networks with Meta's Llama model.",
     long_description=open(root_dir / "README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author_email="goekdenizguelmez@gmail.com",
@@ -41,7 +42,6 @@ setup(
     packages=find_packages(),
     python_requires=">=3.10",
     classifiers=[
-        "Programming Language :: Python :: 3.10",
-        "Operating System :: MacOS :: MacOS X"
-    ],
+        "Programming Language :: Python :: 3.10"
+    ]
 )
