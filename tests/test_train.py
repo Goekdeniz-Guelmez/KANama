@@ -1,6 +1,6 @@
 import torch
 
-from trainer.trainer import train
+from trainer.SFTTrainer import train
 from model.args import ModelArgs
 from model.KANamav4 import KANamav4
 from model.KANamav3 import KANamav3
