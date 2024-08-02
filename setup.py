@@ -17,8 +17,8 @@ else:
 # Setup configuration
 setup(
     name="KANama",
-    version="1.9.5",
-    description="KANama: marrying Kolmogorov–Arnold Networks with Meta's Llama model.",
+    version="2.0.0",
+    description="Fusing Kolmogorov–Arnold Networks with Meta's Llama model for next-level AI performance and versatility.",
     long_description=open(root_dir / "README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author_email="goekdenizguelmez@gmail.com",
@@ -31,8 +31,8 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.10"
     ],
-    include_package_data=True,  # Ensure all data files are included
-    package_data={
-        # Include any package-specific data files here
-    },
+    include_package_data=True,
+    # package_data={
+    #     # Include any package-specific data files here
+    # },
 )
