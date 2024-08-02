@@ -25,6 +25,7 @@ dataset_jsonl = Dataset.load_jsonl_file("path/to/dataset.json", text_property: "
 # {{"train": train split}, {"validation", validation split}, {"test", test split}}
 
 SFTTrainer(
+    model=model
     dataset=dataset_txt, # Will automaticaly check if the dataset has "validation" and "test" proterties other wise only "train" = dataset_txt["train"]
     max_steps=1000,
     epochs=2,
