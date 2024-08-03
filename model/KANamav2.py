@@ -162,11 +162,10 @@ class KANamav2(nn.Module):
             shift_logits = logits[..., :-1, :].contiguous()
             shift_targets = targets[..., 1:].contiguous()
             # Flatten the tokens
-            loss_fct = nn.CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.args.vocab_size)
             shift_targets = shift_targets.view(-1)
             # Enable model parallelism
             shift_targets = shift_targets.to(shift_logits.device)
-            loss = loss_fct(shift_logits, shift_targets)
+            loss = nn.CrossEntropyLoss(shift_logits, shift_targets)
 
         return logits, loss

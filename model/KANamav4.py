@@ -24,7 +24,7 @@ class Attention(nn.Module):
         self.k_proj = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
         self.v_proj = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
 
-        self.softmax_temp_proj = nn.Linear(args.dim, 1, bias=False)  # Add softmax temperature projection\
+        self.softmax_temp_proj = nn.Linear(args.dim, 1, bias=False)  # Add softmax temperature projection
         self.softmax_temp_act = F.silu
         self.current_softmax_temp = None
 
@@ -171,11 +171,10 @@ class KANamav4(nn.Module):
             shift_logits = logits[..., :-1, :].contiguous()
             shift_targets = targets[..., 1:].contiguous()
             # Flatten the tokens
-            loss_fct = nn.CrossEntropyLoss()
             shift_logits = shift_logits.view(-1, self.args.vocab_size)
             shift_targets = shift_targets.view(-1)
             # Enable model parallelism
             shift_targets = shift_targets.to(shift_logits.device)
-            loss = loss_fct(shift_logits, shift_targets)
+            loss = nn.CrossEntropyLoss(shift_logits, shift_targets)
 
         return logits, loss
