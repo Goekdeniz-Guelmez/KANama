@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import math
 
@@ -6,13 +6,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .kan import KANLinear
-from .args import ModelArgs
-from .utils import RMSNorm, precompute_freqs_cis, apply_rotary_emb, repeat_kv
+from kan import KANLinear
+from args import MOEModelArgs
+from utils import RMSNorm, precompute_freqs_cis, apply_rotary_emb, repeat_kv
 
 
 class Attention(nn.Module):
-    def __init__(self, args: ModelArgs):
+    def __init__(self, args: MOEModelArgs):
         super().__init__()
         self.n_kv_heads = args.n_heads if args.n_kv_heads is None else args.n_kv_heads
         self.n_heads = args.n_heads
@@ -33,7 +33,7 @@ class Attention(nn.Module):
 
         self.out_proj = nn.Linear(args.n_heads * self.head_dim, args.dim, bias=False)
 
-    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
         bsz, seqlen, _ = x.shape
         xq, xk, xv = self.q_proj(x), self.k_proj(x), self.v_proj(x)
 
@@ -79,7 +79,7 @@ class Attention(nn.Module):
 
 
 class MLP(nn.Module):
-    def __init__(self, args: ModelArgs, hidden_dim: int):
+    def __init__(self, args: MOEModelArgs, hidden_dim: int):
         super().__init__()
         self.multiple_of = args.multiple_of
         hidden_dim = int(2 * hidden_dim / 3)
@@ -94,21 +94,43 @@ class MLP(nn.Module):
 
     def forward(self, x):
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
-    
+
 
 class KANMLP(nn.Module):
-    def __init__(self, args: ModelArgs, hidden_dim: int):
+    def __init__(self, args: MOEModelArgs, hidden_dim: int):
         super().__init__()
         self.w1 = KANLinear(args.dim, hidden_dim)
         self.w3 = KANLinear(args.dim, hidden_dim)
         self.w2 = KANLinear(hidden_dim, args.dim, base_activation=nn.Identity, enable_standalone_scale_spline=True)
 
-    def forward(self, x) -> torch.Tensor:
+    def forward(self, x):
         return self.w2(self.w1(x) * self.w3(x))
-        
+    
+
+class MoeLayer(nn.Module):
+    def __init__(self, args: MOEModelArgs, experts: List[nn.Module]):
+        super().__init__()
+        self.args = args
+
+        assert len(experts) > 0
+
+        self.experts = nn.ModuleList(experts)
+        self.gate = nn.Linear(args.dim, args.num_experts, bias=False)
+
+    def forward(self, inputs: torch.Tensor):
+        inputs_squashed = inputs.view(-1, inputs.shape[-1])
+        gate_logits = self.gate(inputs_squashed)
+        weights, selected_experts = torch.topk(gate_logits, self.args.num_experts_per_tok)
+        weights = nn.functional.softmax(weights, dim=1, dtype=torch.float).type_as(inputs)
+        results = torch.zeros_like(inputs_squashed)
+        for i, expert in enumerate(self.experts):
+            batch_idx, nth_expert = torch.where(selected_experts == i)
+            results[batch_idx] += weights[batch_idx, nth_expert, None] * expert(inputs_squashed[batch_idx])
+        return results.view_as(inputs)
+
 
 class TransformerBlock(nn.Module):
-    def __init__(self, layer_id: int, args: ModelArgs):
+    def __init__(self, layer_id: int, args: MOEModelArgs):
         super().__init__()
         self.layer_id = layer_id
 
@@ -118,19 +140,25 @@ class TransformerBlock(nn.Module):
         self.mlp_norm = RMSNorm(args.dim, args.rms_norm_eps)
 
         if args.use_kan:
-            self.mlp = KANMLP(args, 4 * args.dim)
+            self.mlp = MoeLayer(
+                args=args,
+                experts=[KANMLP(args, 4 * args.dim) for _ in range(args.num_experts)]
+            )
         else:
-            self.mlp = MLP(args, 4 * args.dim)
+            self.mlp = MoeLayer(
+                args=args,
+                experts=[MLP(args, 4 * args.dim) for _ in range(args.num_experts)]
+            )
 
-    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
         h = x + self.attention(self.attention_norm(x), start_pos, freqs_cis, mask)
         out = h + self.mlp(self.mlp_norm(h))
         return out
 
 
 
-class KANamav4(nn.Module):
-    def __init__(self, args: ModelArgs):
+class KANamav5(nn.Module):
+    def __init__(self, args: MOEModelArgs):
         super().__init__()
         self.args = args
 
@@ -178,3 +206,11 @@ class KANamav4(nn.Module):
             loss = nn.CrossEntropyLoss(shift_logits, shift_targets)
 
         return logits, loss
+
+
+MOEModelArgs.vocab_size = 32
+MOEModelArgs.pad_id = 0
+model = KANamav5(MOEModelArgs)
+print(model)
+
+model(torch.tensor([[0, 2, 12, 4]]))
