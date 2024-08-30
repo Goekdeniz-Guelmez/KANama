@@ -170,11 +170,16 @@ class KANamav3(nn.Module):
             # Shift so that tokens < n predict n
             shift_logits = logits[..., :-1, :].contiguous()
             shift_targets = targets[..., 1:].contiguous()
+            
             # Flatten the tokens
             shift_logits = shift_logits.view(-1, self.args.vocab_size)
             shift_targets = shift_targets.view(-1)
+
             # Enable model parallelism
             shift_targets = shift_targets.to(shift_logits.device)
-            loss = nn.CrossEntropyLoss(shift_logits, shift_targets)
+
+            # Instantiate CrossEntropyLoss and compute loss
+            loss_fn = nn.CrossEntropyLoss()
+            loss = loss_fn(shift_logits, shift_targets)
 
         return logits, loss

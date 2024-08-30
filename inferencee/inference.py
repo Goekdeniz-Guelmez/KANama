@@ -23,8 +23,8 @@ def generate(model, prompt_tokens: torch.Tensor, max_gen_len: int = 10) -> List[
 
     for cur_pos in range(max_prompt_len, total_len):
         logits, _ = model.forward(tokens[:, prev_pos:cur_pos], prev_pos)
-        probs = torch.softmax(logits[:, -1], dim=-1)
-        next_token = torch.multinomial(probs, num_samples=1).squeeze()
+        probs = torch.softmax(logits[:, -1], dim=-1) # Get Probablities by seklecting the last dimesion of the output logits.
+        next_token = torch.multinomial(probs, num_samples=1).squeeze() # Select the TopK Probablity and convert to Token and remove a dimension
         tokens[:, cur_pos] = next_token
         eos_reached |= next_token == args.eos_id
         prev_pos = cur_pos

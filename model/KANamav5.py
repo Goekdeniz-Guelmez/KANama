@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 import math
 
@@ -176,7 +176,7 @@ class KANamav5(nn.Module):
         self.norm = RMSNorm(args.dim, args.rms_norm_eps)
         self.lm_head = nn.Linear(args.dim, args.vocab_size, bias=False)
 
-    def forward(self, tokens: torch.Tensor, start_pos: int = 0, targets: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, tokens: torch.Tensor, start_pos: int = 0, targets: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
         B, L = tokens.shape
         embedds = self.embeddings(tokens)
 
@@ -201,12 +201,17 @@ class KANamav5(nn.Module):
             # Shift so that tokens < n predict n
             shift_logits = logits[..., :-1, :].contiguous()
             shift_targets = targets[..., 1:].contiguous()
+            
             # Flatten the tokens
             shift_logits = shift_logits.view(-1, self.args.vocab_size)
             shift_targets = shift_targets.view(-1)
+
             # Enable model parallelism
             shift_targets = shift_targets.to(shift_logits.device)
-            loss = nn.CrossEntropyLoss(shift_logits, shift_targets)
+
+            # Instantiate CrossEntropyLoss and compute loss
+            loss_fn = nn.CrossEntropyLoss()
+            loss = loss_fn(shift_logits, shift_targets)
 
         return logits, loss
 
@@ -216,5 +221,13 @@ MOEModelArgs.pad_id = 0
 model = KANamav5(MOEModelArgs)
 print(model)
 
-out, loss = model(torch.tensor([[0, 2, 12, 4]]))
-print(out)
+logits, loss = model(torch.tensor([[0, 2, 12, 4]]), targets=torch.tensor([[2, 12, 4, 6]])) # shift teh tokens to the left and add a next Token at the end
+print(logits[:, -1])
+
+probabilities = torch.softmax(logits[:, -1], dim=-1)
+print(probabilities)
+
+next_token = torch.multinomial(probabilities, num_samples=1).squeeze()
+print(next_token)
+
+print(loss)
