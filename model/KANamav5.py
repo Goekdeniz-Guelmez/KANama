@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from kan import KANLinear
-from args import MOEModelArgs
-from utils import RMSNorm, precompute_freqs_cis, apply_rotary_emb, repeat_kv
+from .kan import KANLinear
+from .args import MOEModelArgs
+from .utils import RMSNorm, precompute_freqs_cis, apply_rotary_emb, repeat_kv
 
 
 class Attention(nn.Module):
@@ -201,7 +201,7 @@ class KANamav5(nn.Module):
             # Shift so that tokens < n predict n
             shift_logits = logits[..., :-1, :].contiguous()
             shift_targets = targets[..., 1:].contiguous()
-            
+
             # Flatten the tokens
             shift_logits = shift_logits.view(-1, self.args.vocab_size)
             shift_targets = shift_targets.view(-1)
@@ -216,18 +216,18 @@ class KANamav5(nn.Module):
         return logits, loss
 
 
-MOEModelArgs.vocab_size = 32
-MOEModelArgs.pad_id = 0
-model = KANamav5(MOEModelArgs)
-print(model)
+# MOEModelArgs.vocab_size = 32
+# MOEModelArgs.pad_id = 0
+# model = KANamav5(MOEModelArgs)
+# print(model)
 
-logits, loss = model(torch.tensor([[0, 2, 12, 4]]), targets=torch.tensor([[2, 12, 4, 6]])) # shift teh tokens to the left and add a next Token at the end
-print(logits[:, -1])
+# logits, loss = model(torch.tensor([[0, 2, 12, 4]]), targets=torch.tensor([[2, 12, 4, 6]])) # shift teh tokens to the left and add a next Token at the end
+# print(logits[:, -1])
 
-probabilities = torch.softmax(logits[:, -1], dim=-1)
-print(probabilities)
+# probabilities = torch.softmax(logits[:, -1], dim=-1)
+# print(probabilities)
 
-next_token = torch.multinomial(probabilities, num_samples=1).squeeze()
-print(next_token)
+# next_token = torch.multinomial(probabilities, num_samples=1).squeeze()
+# print(next_token)
 
-print(loss)
+# print(loss)
