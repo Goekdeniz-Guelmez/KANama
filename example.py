@@ -15,6 +15,8 @@ ModelArgs.vocab_size = 30
 ModelArgs.pad_id = 0
 ModelArgs.max_batch_size = 4
 ModelArgs.max_seq_len = 20
+# ModelArgs.use_kan = False
+# ModelArgs.use_softmax_temp_proj = False
 
 
 train_data = torch.tensor([[25, 1, 4, 12, 9, 7, 1, 4, 12, 9, 4, 1, 4, 22, 9, 13, 26, 24, 12, 9, 0]], dtype=torch.long) # Must be a 3 dimansional Tensor [B, max_seq_len, tokens]
