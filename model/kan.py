@@ -153,11 +153,21 @@ class KANLinear(torch.nn.Module):
         )
 
     def forward(self, x: torch.Tensor):
+        # Handle the case where the batch size is zero
+        if x.size(0) == 0:
+            return torch.empty(*x.shape[:-1], self.out_features)
+        #
+        
         assert x.size(-1) == self.in_features
         original_shape = x.shape
         x = x.reshape(-1, self.in_features)
 
         base_output = F.linear(self.base_activation(x), self.base_weight)
+
+        # Print shape for debugging
+        # print(f"Shape of x after reshaping: {x.shape}")
+        # print(f"Shape of b_splines output before view: {self.b_splines(x).shape}")
+
         spline_output = F.linear(
             self.b_splines(x).view(x.size(0), -1),
             self.scaled_spline_weight.view(self.out_features, -1),

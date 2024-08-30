@@ -114,8 +114,8 @@ class MoeLayer(nn.Module):
 
         assert len(experts) > 0
 
-        self.experts = nn.ModuleList(experts)
         self.gate = nn.Linear(args.dim, args.num_experts, bias=False)
+        self.experts = nn.ModuleList(experts)
 
     def forward(self, inputs: torch.Tensor):
         inputs_squashed = inputs.view(-1, inputs.shape[-1])
@@ -127,6 +127,9 @@ class MoeLayer(nn.Module):
             batch_idx, nth_expert = torch.where(selected_experts == i)
             results[batch_idx] += weights[batch_idx, nth_expert, None] * expert(inputs_squashed[batch_idx])
         return results.view_as(inputs)
+    
+
+    
 
 
 class TransformerBlock(nn.Module):
@@ -213,4 +216,5 @@ MOEModelArgs.pad_id = 0
 model = KANamav5(MOEModelArgs)
 print(model)
 
-model(torch.tensor([[0, 2, 12, 4]]))
+out, loss = model(torch.tensor([[0, 2, 12, 4]]))
+print(out)
