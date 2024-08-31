@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import torch
+import math
 
 from tokenizers import Tokenizer
 
@@ -9,6 +10,25 @@ from model.args import MOEModelArgs
 from model.KANamav5 import KANamav5
 
 from utils import load_model
+
+
+def lr_lambda(current_step: int, max_steps: int=50000, warmup_steps: int=40, lr_scheduler_type: str="cosine"):
+    if current_step < warmup_steps:
+        return current_step / warmup_steps
+
+    annealing_steps = max_steps - warmup_steps
+
+    if annealing_steps <= 0:
+        annealing_steps = 1
+
+    progress = (current_step - warmup_steps) / annealing_steps
+    if lr_scheduler_type == "cosine":
+        new_learning_rate = 0.5 * (1.0 + math.cos(math.pi * progress))
+    elif lr_scheduler_type == "sinus":
+        new_learning_rate = 0.5 * (1.0 + math.sin(math.pi * progress))
+    else:
+        new_learning_rate = 1.0
+    return new_learning_rate
 
 
 print("[LOADING TOKENIZER]")
@@ -38,28 +58,15 @@ val_data = data[:, n:]
 
 print("[LOADING MODEL]")
 model = KANamav5(MOEModelArgs)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-new_model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, save=True, max_steps=50000, loss_interval=10, eval_interval=2000)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
+scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+new_model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, scheduler=scheduler, save=True, max_steps=50000, loss_interval=10, eval_interval=2000)
 
 
 # line_19826 = """ROMEO:\nI pay thy poverty, """
 # first_tokens = tokenizer.encode(line_19826)
 # input_tokens = torch.LongTensor(first_tokens.ids).unsqueeze(0)
-
-# logits, loss = model(input_tokens)
-
-# print(logits[:, -1])
-
-# probabilities = torch.softmax(logits[:, -1], dim=-1)
-# print(probabilities)
-
-# next_token = torch.multinomial(probabilities, num_samples=1).squeeze()
-# print(next_token)
-
-# next_token = [next_token.tolist()]
-
-# print(next_token)
-# print(detokenize(next_token))
 
 # def inference(model: torch.nn.Module, tokens, max_new_tokens: int):
 #     for _ in range(max_new_tokens):

@@ -27,7 +27,7 @@ class Attention(nn.Module):
         self.v_proj = nn.Linear(args.dim, self.n_kv_heads * self.head_dim, bias=False)
 
         if self.use_softmax_temp_proj:
-            self.softmax_temp_proj = nn.Linear(args.dim, 1, bias=False)
+            self.softmax_temp_proj = nn.Linear(args.dim, 1, bias=args.softmax_bias)
             self.softmax_temp_act = F.silu
             self.current_softmax_temp = None
 

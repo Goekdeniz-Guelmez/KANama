@@ -15,6 +15,7 @@ class ModelArgs:
 
     use_kan: bool = True
     use_softmax_temp_proj: bool = True
+    softmax_bias = False
     train_softmax_temp: bool = True
     multiple_of: int = 256
     ffn_dim_multiplier: Optional[float] = None

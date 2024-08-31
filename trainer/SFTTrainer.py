@@ -46,7 +46,7 @@ def estimate_loss(model, eval_steps, train_data, val_data):
     model.train()
     return out
 
-def train(model, optimizer, train_data, val_data, max_steps=100, loss_interval=10, eval_interval=10, eval_steps=10, save=False, print_softmax_temp: bool = True):
+def train(model, optimizer, train_data, val_data, scheduler=None, max_steps=100, loss_interval=10, eval_interval=10, eval_steps=10, save=False, print_softmax_temp: bool = True):
     torch.autograd.set_detect_anomaly(True)
     steps = []
     train_losses = []
@@ -87,6 +87,9 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_interval=1
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
+        
+        if scheduler:
+            scheduler.step()
 
         for layer in model.layers:
             if isinstance(layer.mlp, KANLinear):
