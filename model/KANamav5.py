@@ -136,9 +136,6 @@ class MoeLayer(nn.Module):
         return results.view_as(inputs)
     
 
-    
-
-
 class TransformerBlock(nn.Module):
     def __init__(self, layer_id: int, args: MOEModelArgs):
         super().__init__()

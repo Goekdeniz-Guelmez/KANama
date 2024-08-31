@@ -95,6 +95,6 @@ def train(model, optimizer, train_data, val_data, max_steps=100, loss_interval=1
 
     if save:
         # Save the trained model
-        torch.save(model.state_dict(), "trained_KANamev3_model.pth")
+        torch.save(model.state_dict(), "trained_KANama_model.pth")
 
     return model
