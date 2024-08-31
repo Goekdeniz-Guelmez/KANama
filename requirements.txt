@@ -4,3 +4,4 @@ dataclasses
 typing
 sentencepiece
 matplotlib
+tokenizers
