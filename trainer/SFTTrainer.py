@@ -23,31 +23,45 @@ def train_old(model, dataloader, optimizer, num_epochs=100):
         print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}')
 
 
-def get_batch(split, train_data, val_data, model):
+def get_batch(split, train_data, val_data, model, device: str):
     data = train_data if split == 'train' else val_data
     if len(data[0]) <= model.args.max_seq_len:
         raise ValueError(f"Data length ({len(data[0])}) is not sufficient for the sequence length ({model.args.max_seq_len}).")
     ix = torch.randint(len(data[0]) - model.args.max_seq_len, (model.args.max_batch_size,))
     x = torch.stack([data[0, i:i+model.args.max_seq_len] for i in ix])
     y = torch.stack([data[0, i+1:i+model.args.max_seq_len+1] for i in ix])
-    return x.to("cpu"), y.to("cpu")
+    return x.to(device), y.to(device)
 
 @torch.no_grad()
-def estimate_loss(model, eval_steps, train_data, val_data):
+def estimate_loss(model: torch.nn.Module, eval_steps, train_data, val_data, device: str):
     out = {}
     model.eval()
     for split in ['train', 'val']:
         losses = torch.zeros(eval_steps)
         for k in range(eval_steps):
-            X, Y = get_batch(split, train_data=train_data, val_data=val_data, model=model)
+            X, Y = get_batch(split, train_data=train_data, val_data=val_data, model=model, device=device)
             _, loss = model(X, start_pos=0, targets=Y)
             losses[k] = loss.item()
-        out[split] = losses.mean()
+        out[split] = losses.mean().item()
     model.train()
     return out
 
-def train(model, optimizer, train_data, val_data, scheduler=None, max_steps=100, loss_interval=10, eval_interval=10, eval_steps=10, save=False, print_softmax_temp: bool = True):
+def train(
+        model: torch.nn.Module,
+        optimizer,
+        train_data,
+        val_data,
+        scheduler=None,
+        max_steps=100,
+        loss_interval: int = 10,
+        eval_interval: int = 10,
+        eval_steps: int = 10,
+        save: bool = False,
+        print_softmax_temp: bool = True,
+        device: str = "cpu"
+    ):
     torch.autograd.set_detect_anomaly(True)
+    model.to(device)
     steps = []
     train_losses = []
     val_losses = []
@@ -63,7 +77,7 @@ def train(model, optimizer, train_data, val_data, scheduler=None, max_steps=100,
     for step in range(max_steps - 1):
         # Every once in a while, evaluate the loss on train and val sets
         if step % eval_interval == 0 or step == max_steps - 1:
-            losses = estimate_loss(model=model, eval_steps=eval_steps, train_data=train_data, val_data=val_data)
+            losses = estimate_loss(model=model, eval_steps=eval_steps, train_data=train_data, val_data=val_data, device=device)
             steps.append(step)
             train_losses.append(losses['train'])
             val_losses.append(losses['val'])
@@ -75,7 +89,7 @@ def train(model, optimizer, train_data, val_data, scheduler=None, max_steps=100,
                     print(f"Layer {layer_id} temperature: {layer.attention.current_softmax_temp}")
 
         # Sample a batch of data
-        xb, yb = get_batch(split='train', train_data=train_data, val_data=val_data, model=model)
+        xb, yb = get_batch(split='train', train_data=train_data, val_data=val_data, model=model, device=device)
 
         # Evaluate the loss
         logits, loss = model(xb, start_pos=0, targets=yb)

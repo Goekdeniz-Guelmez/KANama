@@ -46,7 +46,7 @@ MOEModelArgs.dim = 64
 
 
 print("[LOADING DATASET]")
-with open("tiny-shakespear.txt", "r") as file:
+with open("datasets/tiny-shakespear.txt", "r") as file:
     dataset = file.read()
 
 dataset = tokenizer.encode(dataset)
@@ -62,21 +62,32 @@ model = KANamav5(MOEModelArgs)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
 scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-new_model = train(model=model, optimizer=optimizer, train_data=train_data, val_data=val_data, scheduler=scheduler, save=True, max_steps=50000, loss_interval=10, eval_interval=2000)
+new_model = train(
+    model=model,
+    optimizer=optimizer,
+    train_data=train_data,
+    val_data=val_data,
+    scheduler=scheduler,
+    save=True,
+    max_steps=100000,
+    loss_interval=1,
+    eval_interval=2000,
+    device="cpu"
+)
 
 
-# line_19826 = """ROMEO:\nI pay thy poverty, """
-# first_tokens = tokenizer.encode(line_19826)
-# input_tokens = torch.LongTensor(first_tokens.ids).unsqueeze(0)
+line_19826 = """ROMEO:\nI pay thy poverty, """
+first_tokens = tokenizer.encode(line_19826)
+input_tokens = torch.LongTensor(first_tokens.ids).unsqueeze(0)
 
-# def inference(model: torch.nn.Module, tokens, max_new_tokens: int):
-#     for _ in range(max_new_tokens):
-#         tokens_conditioned = tokens[:, -MOEModelArgs.max_seq_len:]
-#         logits, _ = model(tokens_conditioned)
-#         probabilities = torch.softmax(logits[:, -1], dim=-1)
-#         next_token = torch.multinomial(probabilities, num_samples=1)
-#         tokens = torch.cat((tokens, next_token), dim=1)
-#         print(tokenizer.decode(next_token.squeeze(dim=1).tolist(), skip_special_tokens=True), end="", flush=False)
+def inference(model: torch.nn.Module, tokens, max_new_tokens: int):
+    for _ in range(max_new_tokens):
+        tokens_conditioned = tokens[:, -MOEModelArgs.max_seq_len:]
+        logits, _ = model(tokens_conditioned)
+        probabilities = torch.softmax(logits[:, -1], dim=-1)
+        next_token = torch.multinomial(probabilities, num_samples=1)
+        tokens = torch.cat((tokens, next_token), dim=1)
+        print(tokenizer.decode(next_token.squeeze(dim=1).tolist(), skip_special_tokens=True), end="", flush=False)
 
 
-# inference(model, input_tokens, 100)
+inference(new_model, input_tokens, 100)

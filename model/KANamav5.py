@@ -12,7 +12,7 @@ from .utils import RMSNorm, precompute_freqs_cis, apply_rotary_emb, repeat_kv
 
 
 class Attention(nn.Module):
-    def __init__(self, args: MOEModelArgs):
+    def __init__(self, args: MOEModelArgs, device: str):
         super().__init__()
         self.n_kv_heads = args.n_heads if args.n_kv_heads is None else args.n_kv_heads
         self.n_heads = args.n_heads
@@ -31,8 +31,8 @@ class Attention(nn.Module):
             self.softmax_temp_act = F.silu
             self.current_softmax_temp = None
 
-        self.cache_k = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
-        self.cache_v = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
+        self.cache_k = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim)).to(device)
+        self.cache_v = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim)).to(device)
 
         self.out_proj = nn.Linear(args.n_heads * self.head_dim, args.dim, bias=False)
 
@@ -137,12 +137,12 @@ class MoeLayer(nn.Module):
     
 
 class TransformerBlock(nn.Module):
-    def __init__(self, layer_id: int, args: MOEModelArgs):
+    def __init__(self, layer_id: int, args: MOEModelArgs, device: str):
         super().__init__()
         self.layer_id = layer_id
 
         self.attention_norm = RMSNorm(args.dim, args.rms_norm_eps)
-        self.attention = Attention(args)
+        self.attention = Attention(args, device)
 
         self.mlp_norm = RMSNorm(args.dim, args.rms_norm_eps)
 
@@ -175,7 +175,7 @@ class KANamav5(nn.Module):
 
         self.layers = torch.nn.ModuleList()
         for layer_id in range(args.n_layers):
-            self.layers.append(TransformerBlock(layer_id, args))
+            self.layers.append(TransformerBlock(layer_id, args, device))
 
         self.norm = RMSNorm(args.dim, args.rms_norm_eps)
         self.lm_head = nn.Linear(args.dim, args.vocab_size, bias=False)
