@@ -56,6 +56,7 @@ class MOEModelArgs:
     use_kan: bool = True
     train_softmax_temp: bool = True
     use_softmax_temp_proj: bool = True
+    softmax_bias = False
     multiple_of: int = 256
     ffn_dim_multiplier: Optional[float] = None
 

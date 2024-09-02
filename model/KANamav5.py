@@ -165,7 +165,7 @@ class TransformerBlock(nn.Module):
 
 
 class KANamav5(nn.Module):
-    def __init__(self, args: MOEModelArgs):
+    def __init__(self, args: MOEModelArgs, device: str="cpu"):
         super().__init__()
         self.args = args
 

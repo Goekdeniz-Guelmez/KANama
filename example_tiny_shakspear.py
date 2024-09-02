@@ -39,6 +39,7 @@ MOEModelArgs.vocab_size = tokenizer.get_vocab_size()
 MOEModelArgs.pad_id = tokenizer.token_to_id("[PAD]") if "[PAD]" in tokenizer.get_vocab() else None
 MOEModelArgs.max_batch_size = 4
 MOEModelArgs.max_seq_len = 20
+MOEModelArgs.n_layers = 12
 MOEModelArgs.dim = 64
 # MOEModelArgs.use_kan = False
 # MOEModelArgs.use_softmax_temp_proj = False
