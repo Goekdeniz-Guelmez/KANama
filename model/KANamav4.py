@@ -31,8 +31,8 @@ class Attention(nn.Module):
             self.softmax_temp_act = F.silu
             self.current_softmax_temp = None
 
-        self.cache_k = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
-        self.cache_v = torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim))
+        self.register_buffer('cache_k', torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim)))
+        self.register_buffer('cache_v', torch.zeros((args.max_batch_size, args.max_seq_len, self.n_kv_heads, self.head_dim)))
 
         self.out_proj = nn.Linear(args.n_heads * self.head_dim, args.dim, bias=False)
 
@@ -137,8 +137,10 @@ class TransformerBlock(nn.Module):
 
 
 class KANamav4(nn.Module):
-    def __init__(self, args: ModelArgs):
+    def __init__(self, args: ModelArgs, device: str="cpu"):
         super().__init__()
+        self.device = torch.device(device)
+
         self.args = args
 
         self.freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len * 2, args.rope_theta, args.use_scaled_rope)
@@ -152,7 +154,13 @@ class KANamav4(nn.Module):
         self.norm = RMSNorm(args.dim, args.rms_norm_eps)
         self.lm_head = nn.Linear(args.dim, args.vocab_size, bias=False)
 
+        self.to(self.device)
+
     def forward(self, tokens: torch.Tensor, start_pos: int = 0, targets: Optional[torch.Tensor] = None) -> torch.Tensor:
+        tokens = tokens.to(self.device)
+        if targets is not None:
+            targets = targets.to(self.device)
+
         B, L = tokens.shape
         embedds = self.embeddings(tokens)
 
@@ -161,9 +169,9 @@ class KANamav4(nn.Module):
 
         mask = None
         if L > 1:
-            mask = torch.full((L, L), float("-inf"), device=tokens.device)
+            mask = torch.full((L, L), float("-inf"), device=self.device)
             mask = torch.triu(mask, diagonal=1)
-            mask = torch.hstack([torch.zeros((L, start_pos), device=tokens.device), mask]).type_as(embedds)
+            mask = torch.hstack([torch.zeros((L, start_pos), device=self.device), mask]).type_as(embedds)
 
         for layer in self.layers:
             h = layer(embedds, start_pos, freqs_cis, mask)

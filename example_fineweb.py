@@ -34,7 +34,7 @@ def lr_lambda(current_step: int, max_steps: int=50000, warmup_steps: int=40, lr_
 
 
 print("[LOADING TOKENIZER]")
-tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.3")
+tokenizer = AutoTokenizer.from_pretrained("Doctor-Shotgun/TinyLlama-1.1B-32k")
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -42,11 +42,11 @@ if tokenizer.pad_token is None:
 MOEModelArgs.vocab_size = tokenizer.vocab_size
 MOEModelArgs.pad_id = tokenizer.pad_token_id
 MOEModelArgs.num_experts_per_tok = 2
-MOEModelArgs.max_batch_size = 4
+MOEModelArgs.max_batch_size = 100
 MOEModelArgs.max_seq_len = 20
-MOEModelArgs.num_experts = 2
-MOEModelArgs.n_layers = 12
-MOEModelArgs.dim = 64
+MOEModelArgs.num_experts = 8
+MOEModelArgs.n_layers = 16
+MOEModelArgs.dim = 256
 # MOEModelArgs.use_kan = False
 # MOEModelArgs.use_softmax_temp_proj = False
 
@@ -70,8 +70,8 @@ data = torch.cat(tokenized_data, dim=0).unsqueeze(0)  # unsqueeze to add a batch
 
 # Define train/val split based on the size of the dataset
 n = int(0.9 * data.size(1))  # data.size(1) because sequences are concatenated along dimension 1
-train_data = data[:, :n]
-val_data = data[:, n:]
+train_data = data[:, :n].to(device)
+val_data = data[:, n:].to(device)
 
 print("[LOADING MODEL]")
 model = KANamav5(MOEModelArgs, device=device)
@@ -96,9 +96,9 @@ new_model = train(
     val_data=val_data,
     scheduler=scheduler,
     save_model_name=True,
-    max_steps=100000,
-    loss_interval=10,
-    eval_interval=20000,
+    max_steps=100,
+    loss_interval=5,
+    eval_interval=50,
     device=device
 )
 
