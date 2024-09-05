@@ -43,7 +43,7 @@ MOEModelArgs.vocab_size = tokenizer.vocab_size
 MOEModelArgs.pad_id = tokenizer.pad_token_id
 MOEModelArgs.num_experts_per_tok = 2
 MOEModelArgs.max_batch_size = 100
-MOEModelArgs.max_seq_len = 20
+MOEModelArgs.max_seq_len = 128
 MOEModelArgs.num_experts = 8
 MOEModelArgs.n_layers = 16
 MOEModelArgs.dim = 256
@@ -73,7 +73,7 @@ n = int(0.9 * data.size(1))  # data.size(1) because sequences are concatenated a
 train_data = data[:, :n].to(device)
 val_data = data[:, n:].to(device)
 
-print("[LOADING MODEL]")
+print("\n[LOADING MODEL]\n")
 model = KANamav5(MOEModelArgs, device=device)
 
 # Starting sequence (as tokens)
@@ -81,21 +81,19 @@ initial_text = "Once upon a time"
 initial_tokens = tokenizer(initial_text, return_tensors="pt").input_ids.to(device)
 
 # Perform inference
-# generated_tokens, generated_text = quick_inference(model, initial_tokens, max_new_tokens=50, tokenizer=tokenizer)
-
-# print("\nGenerated Text:")
-# print(generated_text)
+generated_tokens, generated_text = quick_inference(model, initial_tokens, max_new_tokens=50, tokenizer=tokenizer)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
 scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
+print("\n[TRAINING MODEL]\n")
 new_model = train(
     model=model,
     optimizer=optimizer,
     train_data=train_data,
     val_data=val_data,
     scheduler=scheduler,
-    save_model_name=True,
+    save_model_name="KANama-medium",
     max_steps=100,
     loss_interval=5,
     eval_interval=50,
