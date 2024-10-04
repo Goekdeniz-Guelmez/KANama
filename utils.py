@@ -3,14 +3,6 @@ import re, os
 
 import torch
 
-
-def load_model(model, file_name="trained_KANama_model.pth"):
-    model.load_state_dict(torch.load(file_name))
-    return model
-
-def save_model(model, file_name="trained_KANama_model.pth"):
-    torch.save(model.state_dict(), file_name)
-
 def createLossPlot(steps, losses, title="training"):
     plt.plot(steps, losses, linewidth=1)
     plt.xlabel("steps")
@@ -91,30 +83,3 @@ def visualize_KANama(file_path, combined_file_path, individual_folder_path):
     plt.tight_layout()
     plt.savefig(combined_file_path)
     plt.show()
-
-
-def quick_inference(model: torch.nn.Module, tokens: torch.Tensor, max_new_tokens: int, tokenizer):
-    model.eval()  # Set model to evaluation mode
-    with torch.no_grad():  # Disable gradient calculation for inference
-        for _ in range(max_new_tokens):
-            # Take the last 'max_seq_len' tokens as input to the model
-            tokens_conditioned = tokens[:, -model.args.max_seq_len:]
-            
-            # Get the model's predictions (logits)
-            logits, _ = model(tokens_conditioned)
-            
-            # Apply softmax to the last token's logits to get probabilities
-            probabilities = torch.softmax(logits[:, -1, :], dim=-1)
-            
-            # Sample the next token from the probability distribution
-            next_token = torch.multinomial(probabilities, num_samples=1)
-            
-            # Append the predicted token to the input sequence
-            tokens = torch.cat((tokens, next_token), dim=1)
-            
-            # Decode and print the token (convert from token ID to string)
-            decoded_token = tokenizer.decode(next_token.squeeze(dim=1).tolist(), skip_special_tokens=True)
-            print(decoded_token, end="", flush=True)
-    
-    # Return the final generated sequence (both as tokens and decoded text)
-    return tokens, tokenizer.decode(tokens.squeeze(dim=0).tolist(), skip_special_tokens=True)
