@@ -5,3 +5,4 @@ typing
 sentencepiece
 matplotlib
 tokenizers
+tqdm

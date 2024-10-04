@@ -12,7 +12,9 @@ from model.KANamav5 import KANamav5
 
 from utils import load_model, quick_inference
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = 'cuda' if torch.cuda.is_available() else 'mps' if ( torch.backends.mps.is_available() and torch.backends.mps.is_built() ) else 'cpu'
+
+device = "cpu"
 
 def lr_lambda(current_step: int, max_steps: int=50000, warmup_steps: int=40, lr_scheduler_type: str="cosine"):
     if current_step < warmup_steps:
