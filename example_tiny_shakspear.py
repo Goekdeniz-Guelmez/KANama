@@ -9,7 +9,7 @@ from trainer.SFTTrainer import train
 from model.args import MOEModelArgs
 from model.KANaMoEv1 import KANamav5
 
-from utils import load_model
+from model.handler import from_pretrained
 
 
 def lr_lambda(current_step: int, max_steps: int=50000, warmup_steps: int=40, lr_scheduler_type: str="cosine"):

@@ -10,7 +10,7 @@ from trainer.SFTTrainer import train
 from model.args import MOEModelArgs
 from model.KANaMoEv1 import KANaMoEv1
 
-from utils import load_model, quick_inference
+from model.handler import from_pretrained, quick_inference
 
 # device = 'cuda' if torch.cuda.is_available() else 'mps' if ( torch.backends.mps.is_available() and torch.backends.mps.is_built() ) else 'cpu'
 
