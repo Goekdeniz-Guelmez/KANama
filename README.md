@@ -19,3 +19,20 @@ Install via PyPi:
 ## Examples
 
 For a good introduction, you can look into the example files.
+
+## Citing KANama
+
+The KANama software suite was developed by Gökdeniz Gülmez. If you find
+KANama useful in your research and wish to cite it, please use the following
+BibTex entry:
+
+```text
+@software{
+  KANama,
+  author = {Gökdeniz Gülmez},
+  title = {{KANama}: Fusing Kolmogorov–Arnold Networks with Meta's Llama model for next-level AI performance and versatility.},
+  url = {https://github.com/Goekdeniz-Guelmez/KANama},
+  version = {2.5.6},
+  year = {2024},
+}
+```
