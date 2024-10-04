@@ -7,7 +7,7 @@ from tokenizers import Tokenizer
 
 from trainer.SFTTrainer import train
 from model.args import MOEModelArgs
-from model.KANamav5 import KANamav5
+from model.KANaMoEv1 import KANamav5
 
 from utils import load_model
 

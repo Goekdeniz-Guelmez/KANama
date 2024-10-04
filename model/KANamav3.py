@@ -136,6 +136,8 @@ class KANamav3(nn.Module):
 
         self.args = args
 
+        self.args.model_type = "KANamav3"
+
         self.freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len * 2, args.rope_theta, args.use_scaled_rope)
 
         self.embeddings = nn.Embedding(args.vocab_size, args.dim, padding_idx=args.pad_id)

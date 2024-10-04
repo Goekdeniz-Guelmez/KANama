@@ -163,13 +163,14 @@ class TransformerBlock(nn.Module):
         return out
 
 
-
-class KANamav5(nn.Module):
+class KANaMoEv1(nn.Module):
     def __init__(self, args: MOEModelArgs, device: str="cpu"):
         super().__init__()
         self.device = torch.device(device)
-
+        
         self.args = args
+
+        self.args.model_type = "KANaMoEv1"
 
         self.freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len * 2, args.rope_theta, args.use_scaled_rope)
 
@@ -226,20 +227,3 @@ class KANamav5(nn.Module):
             loss = loss_fn(shift_logits, shift_targets)
 
         return logits, loss
-
-
-# MOEModelArgs.vocab_size = 32
-# MOEModelArgs.pad_id = 0
-# model = KANamav5(MOEModelArgs)
-# print(model)
-
-# logits, loss = model(torch.tensor([[0, 2, 12, 4]]), targets=torch.tensor([[2, 12, 4, 6]])) # shift teh tokens to the left and add a next Token at the end
-# print(logits[:, -1])
-
-# probabilities = torch.softmax(logits[:, -1], dim=-1)
-# print(probabilities)
-
-# next_token = torch.multinomial(probabilities, num_samples=1).squeeze()
-# print(next_token)
-
-# print(loss)
