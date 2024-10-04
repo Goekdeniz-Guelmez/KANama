@@ -8,7 +8,7 @@ from transformers import AutoTokenizer
 
 from trainer.SFTTrainer import train
 from model.args import MOEModelArgs
-from model.KANaMoEv1 import KANamav5
+from model.KANaMoEv1 import KANaMoEv1
 
 from utils import load_model, quick_inference
 
@@ -76,7 +76,7 @@ train_data = data[:, :n].to(device)
 val_data = data[:, n:].to(device)
 
 print("\n[LOADING MODEL]\n")
-model = KANamav5(MOEModelArgs, device=device)
+model = KANaMoEv1(MOEModelArgs, device=device)
 
 # Starting sequence (as tokens)
 initial_text = "Once upon a time"

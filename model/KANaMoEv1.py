@@ -167,10 +167,10 @@ class KANaMoEv1(nn.Module):
     def __init__(self, args: MOEModelArgs, device: str="cpu"):
         super().__init__()
         self.device = torch.device(device)
-        
+
         self.args = args
 
-        self.args.model_type = "KANaMoEv1"
+        self.args.model_type = self.model_type = "KANaMoEv1"
 
         self.freqs_cis = precompute_freqs_cis(args.dim // args.n_heads, args.max_seq_len * 2, args.rope_theta, args.use_scaled_rope)
 

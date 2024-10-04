@@ -44,6 +44,7 @@ class ModelArgs:
 
 @dataclass
 class MOEModelArgs:
+    model_type: str
     vocab_size: int = -1
     pad_id: int = -1
     eos_id: int = pad_id
