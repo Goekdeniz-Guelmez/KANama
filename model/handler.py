@@ -4,6 +4,7 @@ from .KANamav3 import KANamav3
 from .KANamav4 import KANamav4
 from .KANaMoEv1 import KANaMoEv1
 from .args import ModelArgs, MOEModelArgs
+from textwrap import dedent
 import torch.nn as nn
 import torch
 import os
@@ -111,3 +112,61 @@ def quick_inference(model: torch.nn.Module, tokens: torch.Tensor, max_new_tokens
     
     # Return the final generated sequence (both as tokens and decoded text)
     return tokens, tokenizer.decode(tokens.squeeze(dim=0).tolist(), skip_special_tokens=True)
+
+
+def upload_to_hub(path: str, upload_repo: str, hf_path: str):
+    """
+    Uploads the model to Hugging Face hub.
+
+    Args:
+        path (str): Local path to the model.
+        upload_repo (str): Name of the HF repo to upload to.
+        hf_path (str): Path to the original Hugging Face model.
+    """
+    from huggingface_hub import HfApi, ModelCard, logging
+
+    card = ModelCard.load(hf_path)
+    card.data.tags = ["KANama"] if card.data.tags is None else card.data.tags + ["KANama"]
+    card.data.base_model = hf_path
+    card.text = dedent(
+        f"""
+        # {upload_repo}
+
+        The Model [{upload_repo}](https://huggingface.co/{upload_repo}) was created using KANama.
+
+        ## Use with KANama
+
+        ```bash
+        pip install KANama, transformers
+        ```
+
+        ```python
+        from model.handler import from_pretrained, quick_inference
+        from transformers import AutoTokenizer
+    
+        tokenizer = AutoTokenizer.from_pretrained("Doctor-Shotgun/TinyLlama-1.1B-32k")
+        model = from_pretrained("path/to/model/folder")
+
+        prompt="hello"
+
+        input_tokens = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+
+        generated_tokens, generated_text = quick_inference(model, input_tokens, max_new_tokens=50, tokenizer=tokenizer)
+        print(generated_text)
+        ```
+        """
+    )
+    card.save(os.path.join(path, "README.md"))
+
+    logging.set_verbosity_info()
+
+    api = HfApi()
+    api.create_repo(repo_id=upload_repo, exist_ok=True)
+    api.upload_folder(
+        folder_path=path,
+        repo_id=upload_repo,
+        repo_type="model",
+        multi_commits=True,
+        multi_commits_verbose=True,
+    )
+    print(f"Upload successful, go to https://huggingface.co/{upload_repo} for details.")
