@@ -13,7 +13,7 @@ Install via PyPi:
 - KANamav1: The basic Llama3.1 model mith a KAN model instead of a basic MLP.
 - KANamav2: More optimized then v1.
 - KANamav3: A Llama3.1 model mith a KAN and a dynaicaly adjusting Softmax Temperature.
-- KANamav4: More optimized then v1.
+- KANamav4: More optimized then v3.
 - KANaMoEv1: v4 but with a MoE architecture.
 
 ## Examples
